@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verified Doctors - Medi Lingo</title>
+    <meta name="description" content="Connect with certified, verified telemedicine physicians and healthcare specialists on Medi Lingo.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="index.html" class="brand">
+            <div class="brand-icon">🩺</div>
+            <span class="brand-text">Medi Lingo</span>
+            <span class="brand-badge">AI</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <span class="nav-label">Patient Navigation</span>
+            <a href="index.html" class="nav-item">
+                <span class="icon">🏠</span> Dashboard
+            </a>
+            <a href="consult.html" class="nav-item">
+                <span class="icon">🎙️</span> Start Consultation
+            </a>
+            <a href="medicine-reference.html" class="nav-item">
+                <span class="icon">📚</span> Medicine Reference
+            </a>
+            <a href="medicines.html" class="nav-item">
+                <span class="icon">💊</span> Medicines Available
+            </a>
+            <a href="doctors.html" class="nav-item active">
+                <span class="icon">👨‍⚕️</span> Available Doctors
+            </a>
+            <a href="patient-profile.html" class="nav-item">
+                <span class="icon">📋</span> My Prescriptions
+            </a>
+            <button class="nav-item emergency" onclick="PatientController.triggerEmergency()">
+                <span class="icon">🚨</span> Emergency SOS
+            </button>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" id="headerPatientAvatar">P</div>
+            <div class="user-details">
+                <div class="user-name" id="headerPatientName">Guest Patient</div>
+                <div class="user-role">Patient Portal</div>
+            </div>
+            <button id="headerLogoutBtn" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('patient', 'patient-login.html')">🚪</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>👨‍⚕️ Verified Medical Specialists</h1>
+                </div>
+                <p>State-board licensed physicians available for digital teleconsultations & prescription reviews</p>
+            </div>
+            <div class="top-bar-actions">
+                <div class="search-box">
+                    <input type="text" placeholder="Search by name or specialization..." oninput="filterDoctors(this.value)">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- SPECIALTY FILTER PILLS -->
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px;">
+            <button class="pill-badge teal" onclick="filterBySpecialty('All')">All Specialties</button>
+            <button class="pill-badge" onclick="filterBySpecialty('General Medicine')">General Medicine</button>
+            <button class="pill-badge" onclick="filterBySpecialty('Pediatrics')">Pediatrics</button>
+            <button class="pill-badge" onclick="filterBySpecialty('Pulmonology')">Pulmonology</button>
+            <button class="pill-badge" onclick="filterBySpecialty('Dermatology')">Dermatology</button>
+        </div>
+
+        <!-- DOCTORS GRID -->
+        <section class="cards-grid" id="doctorsGridContainer">
+            <div style="text-align:center; grid-column:1/-1; padding:40px; color:var(--text-muted);">
+                Loading verified doctors directory...
+            </div>
+        </section>
+
+    </main>
+
+</div>
+
+<!-- DOCTOR CONSULTATION REQUEST MODAL -->
+<div id="doctorConsultModal" class="dispense-modal-overlay">
+    <div class="dispense-modal" style="max-width:500px; text-align:left;">
+        <h3 style="font-size:20px; color:var(--teal); margin-bottom:6px;">Connect with Doctor</h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+            Consultation with <strong id="consultDoctorName" style="color:var(--text-main);">Dr. Arvind</strong> (<span id="consultDoctorSpec"></span>)
+        </p>
+
+        <form onsubmit="submitDoctorRequest(event)">
+            <div class="form-group">
+                <label class="form-label">Patient Name *</label>
+                <input type="text" id="consultPatientName" class="form-control" placeholder="Your full name" required>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label class="form-label">Age *</label>
+                    <input type="number" id="consultPatientAge" class="form-control" placeholder="Age" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number *</label>
+                    <input type="tel" id="consultPatientPhone" class="form-control" placeholder="Mobile" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Primary Symptoms / Health Concern *</label>
+                <textarea id="consultSymptoms" class="form-control" placeholder="Describe your symptoms in detail..." rows="3" required></textarea>
+            </div>
+
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button type="button" class="btn btn-secondary btn-block" onclick="closeDoctorConsultModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-block">Send Request 👨‍⚕️</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/patient.js"></script>
+<script>
+let allDoctors = [];
+let selectedDoctor = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadVerifiedDoctors();
+    autoFillPatientInfo();
+});
+
+function autoFillPatientInfo() {
+    const p = Auth.getSession("patient");
+    if (p) {
+        if (p.name) document.getElementById("consultPatientName").value = p.name;
+        if (p.age) document.getElementById("consultPatientAge").value = p.age;
+        if (p.phone) document.getElementById("consultPatientPhone").value = p.phone;
+    }
+}
+
+async function loadVerifiedDoctors() {
+    try {
+        const res = await fetch(`${API_BASE}/api/doctors/verified`);
+        allDoctors = await res.json();
+        renderDoctors(allDoctors);
+    } catch (e) {
+        console.error("Doctors load error:", e);
+        document.getElementById("doctorsGridContainer").innerHTML = `
+            <div style="text-align:center; grid-column:1/-1; padding:40px; color:var(--emergency);">
+                Failed to load verified doctors list.
+            </div>
+        `;
+    }
+}
+
+function renderDoctors(docs) {
+    const container = document.getElementById("doctorsGridContainer");
+    if (docs.length === 0) {
+        container.innerHTML = `<div style="text-align:center; grid-column:1/-1; padding:40px; color:var(--text-muted);">No verified doctors currently matched.</div>`;
+        return;
+    }
+
+    let html = "";
+    docs.forEach(d => {
+        const isOnline = d.is_online === 1;
+        const initials = d.name.replace("Dr. ", "").split(" ").map(n => n[0]).join("").slice(0, 2);
+
+        html += `
+            <div class="doctor-card">
+                <div class="doctor-header">
+                    <div class="doctor-avatar-box">${initials}</div>
+                    <div class="doctor-details">
+                        <h4>${d.name} <span class="verified-icon" title="State Medical Council Verified">✅</span></h4>
+                        <p style="color:var(--teal); font-weight:600; font-size:13.5px;">${d.specialization || 'General Physician'}</p>
+                        <p style="font-size:12px; color:var(--text-sub);">${d.qualification || 'MBBS, MD'} • ${d.experience || '5+ Years'}</p>
+                    </div>
+                </div>
+
+                <div class="doctor-meta">
+                    <div>
+                        <span style="color:var(--text-sub); display:block; font-size:11px;">REG NUMBER</span>
+                        <strong style="color:var(--text-main);">${d.reg_number}</strong>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="color:var(--text-sub); display:block; font-size:11px;">AVAILABILITY</span>
+                        <span class="status-badge ${isOnline ? 'approved' : 'warning'}" style="font-size:11px;">
+                            ${isOnline ? '🟢 Online Now' : '🟡 Next Slot'}
+                        </span>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-block" onclick="openDoctorConsultModal(${d.id})">
+                    Consult Now 🩺
+                </button>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function filterDoctors(query) {
+    const q = (query || "").toLowerCase();
+    const filtered = allDoctors.filter(d => 
+        d.name.toLowerCase().includes(q) ||
+        (d.specialization && d.specialization.toLowerCase().includes(q)) ||
+        (d.qualification && d.qualification.toLowerCase().includes(q))
+    );
+    renderDoctors(filtered);
+}
+
+function filterBySpecialty(spec) {
+    if (spec === 'All') {
+        renderDoctors(allDoctors);
+        return;
+    }
+    const filtered = allDoctors.filter(d => d.specialization && d.specialization.toLowerCase().includes(spec.toLowerCase()));
+    renderDoctors(filtered);
+}
+
+function openDoctorConsultModal(doctorId) {
+    selectedDoctor = allDoctors.find(d => d.id === doctorId);
+    if (!selectedDoctor) return;
+
+    document.getElementById("consultDoctorName").innerText = selectedDoctor.name;
+    document.getElementById("consultDoctorSpec").innerText = selectedDoctor.specialization;
+
+    // Check if symptoms were typed in consult.html
+    const lastSymptoms = localStorage.getItem("symptoms") || "";
+    if (lastSymptoms && !document.getElementById("consultSymptoms").value) {
+        document.getElementById("consultSymptoms").value = lastSymptoms;
+    }
+
+    document.getElementById("doctorConsultModal").style.display = "flex";
+}
+
+function closeDoctorConsultModal() {
+    document.getElementById("doctorConsultModal").style.display = "none";
+}
+
+async function submitDoctorRequest(e) {
+    e.preventDefault();
+    const name = document.getElementById("consultPatientName").value.trim();
+    const age = document.getElementById("consultPatientAge").value.trim();
+    const phone = document.getElementById("consultPatientPhone").value.trim();
+    const symptom = document.getElementById("consultSymptoms").value.trim();
+
+    const patient = Auth.getSession("patient");
+    const patientId = patient ? (patient.patient_uid || patient.id) : ("PAT-" + Date.now().toString().slice(-6));
+
+    try {
+        const res = await fetch(`${API_BASE}/api/ai-prescription`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                patient_id: patientId,
+                name: name,
+                age: age,
+                gender: patient ? patient.gender : "Not specified",
+                phn_num: phone,
+                language: "English",
+                symptom: `[Doctor Request to ${selectedDoctor.name}] ${symptom}`
+            })
+        });
+
+        const data = await res.json();
+        closeDoctorConsultModal();
+        Auth.showToast(`Consultation request sent to ${selectedDoctor.name}!`, "success");
+
+        setTimeout(() => {
+            window.location.href = "patient-profile.html";
+        }, 1200);
+    } catch (e) {
+        console.error("Consultation request error:", e);
+        alert("Failed to submit request.");
+    }
+}
+</script>
+
+</body>
+</html>

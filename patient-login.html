@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Login - Medi Lingo Healthcare</title>
+    <meta name="description" content="Login to Medi Lingo Multilingual Healthcare Portal for AI triage, doctor consultations and smart medicine dispensing.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="auth-page-wrapper">
+    <div class="auth-theme-toggle">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+            <span class="theme-toggle-icon">🌙</span>
+            <span class="theme-toggle-text">Dark</span>
+        </button>
+    </div>
+
+    <div class="auth-card">
+        
+        <div class="auth-header">
+            <div class="logo-icon">🩺</div>
+            <h2>Patient Sign In</h2>
+            <p>Welcome back to Medi Lingo Healthcare</p>
+        </div>
+
+        <div class="auth-tabs">
+            <div class="auth-tab active" id="tabPassword" onclick="switchLoginMode('password')">Password</div>
+            <div class="auth-tab" id="tabOtp" onclick="switchLoginMode('otp')">Login with OTP</div>
+        </div>
+
+        <form id="patientLoginForm" onsubmit="handlePatientLogin(event)">
+            
+            <div class="form-group">
+                <label class="form-label" id="identifierLabel">Mobile Number or Email</label>
+                <div class="input-icon-wrapper">
+                    <span class="input-icon">📱</span>
+                    <input type="text" id="loginIdentifier" class="form-control" placeholder="e.g. 9840112233 or patient@email.com" required>
+                </div>
+            </div>
+
+            <div class="form-group" id="passwordGroup">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <label class="form-label" style="margin:0;">Password</label>
+                    <a href="#" style="font-size:12px;" onclick="alert('Demo password reset link sent to your registered mobile number.')">Forgot?</a>
+                </div>
+                <div class="input-icon-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password">
+                </div>
+            </div>
+
+            <div class="form-group" id="otpGroup" style="display:none;">
+                <label class="form-label">Enter 6-Digit OTP</label>
+                <div class="input-icon-wrapper">
+                    <span class="input-icon">🔑</span>
+                    <input type="text" id="loginOtp" class="form-control" placeholder="Demo OTP: 123456" maxlength="6">
+                </div>
+                <small style="color:var(--teal); font-size:11.5px; display:block; margin-top:6px;">Use test OTP: 123456</small>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; font-size:13px; color:var(--text-muted);">
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                    <input type="checkbox" id="rememberMe"> Remember Me
+                </label>
+                <span style="font-size:12px; color:var(--text-sub);">Role: Patient</span>
+            </div>
+
+            <button type="submit" id="patientLoginBtn" class="btn btn-primary btn-block">
+                Sign In to Dashboard →
+            </button>
+        </form>
+
+        <div style="text-align:center; margin-top:24px; font-size:13.5px; color:var(--text-muted);">
+            Don't have a patient account? 
+            <a href="patient-register.html" style="font-weight:600;">Register Now</a>
+        </div>
+
+        <div style="text-align:center; margin-top:16px; border-top:1px solid var(--border-color); padding-top:16px; font-size:12px; color:var(--text-sub);">
+            Are you a medical professional? <a href="doctor-login.html">Doctor Portal</a> • <a href="admin-login.html">Admin</a>
+        </div>
+
+    </div>
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script>
+let isOtpMode = false;
+
+function switchLoginMode(mode) {
+    isOtpMode = (mode === 'otp');
+    document.getElementById('tabPassword').classList.toggle('active', !isOtpMode);
+    document.getElementById('tabOtp').classList.toggle('active', isOtpMode);
+    document.getElementById('passwordGroup').style.display = isOtpMode ? 'none' : 'block';
+    document.getElementById('otpGroup').style.display = isOtpMode ? 'block' : 'none';
+    if (!isOtpMode) {
+        document.getElementById('loginPassword').setAttribute('required', 'true');
+        document.getElementById('loginOtp').removeAttribute('required');
+    } else {
+        document.getElementById('loginPassword').removeAttribute('required');
+        document.getElementById('loginOtp').setAttribute('required', 'true');
+    }
+}
+
+async function handlePatientLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById("patientLoginBtn");
+    const identifier = document.getElementById("loginIdentifier").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const otp = document.getElementById("loginOtp").value.trim();
+
+    btn.disabled = true;
+    btn.innerText = "Signing in...";
+
+    try {
+        const res = await fetch(`${API_BASE}/api/patient/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                identifier,
+                password,
+                isOtp: isOtpMode,
+                otp
+            })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            Auth.setSession("patient", data.patient);
+            Auth.showToast("Login successful! Redirecting...", "success");
+            setTimeout(() => {
+                window.location.href = "index.html";
+            }, 800);
+        } else {
+            alert(data.message || "Login failed. Please check credentials.");
+            btn.disabled = false;
+            btn.innerText = "Sign In to Dashboard →";
+        }
+    } catch (err) {
+        console.error("Login error:", err);
+        alert("Backend connection error. Please ensure server is running.");
+        btn.disabled = false;
+        btn.innerText = "Sign In to Dashboard →";
+    }
+}
+</script>
+
+</body>
+</html>

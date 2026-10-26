@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Medicine Vending - Medi Lingo</title>
+    <meta name="description" content="Automated IoT-enabled Smart Medicine Vending Machine with real-time inventory and instant dispensing.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="index.html" class="brand">
+            <div class="brand-icon">🩺</div>
+            <span class="brand-text">Medi Lingo</span>
+            <span class="brand-badge">AI</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <span class="nav-label">Patient Navigation</span>
+            <a href="index.html" class="nav-item">
+                <span class="icon">🏠</span> Dashboard
+            </a>
+            <a href="consult.html" class="nav-item">
+                <span class="icon">🎙️</span> Start Consultation
+            </a>
+            <a href="medicine-reference.html" class="nav-item">
+                <span class="icon">📚</span> Medicine Reference
+            </a>
+            <a href="medicines.html" class="nav-item active">
+                <span class="icon">💊</span> Medicines Available
+            </a>
+            <a href="doctors.html" class="nav-item">
+                <span class="icon">👨‍⚕️</span> Available Doctors
+            </a>
+            <a href="patient-profile.html" class="nav-item">
+                <span class="icon">📋</span> My Prescriptions
+            </a>
+            <button class="nav-item emergency" onclick="PatientController.triggerEmergency()">
+                <span class="icon">🚨</span> Emergency SOS
+            </button>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" id="headerPatientAvatar">P</div>
+            <div class="user-details">
+                <div class="user-name" id="headerPatientName">Guest Patient</div>
+                <div class="user-role">Patient Portal</div>
+            </div>
+            <button id="headerLogoutBtn" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('patient', 'patient-login.html')">🚪</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>💊 Smart Medicine Vending Machine</h1>
+                </div>
+                <p>On-site automated IoT medicine dispenser • Real-time stock & instant delivery</p>
+            </div>
+            <div class="top-bar-actions">
+                <div class="search-box">
+                    <input type="text" id="medSearchInput" placeholder="Search medicines, categories, symptoms..." oninput="filterMedicines(this.value)">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- VENDING MACHINE HERO & IoT HARDWARE STATUS -->
+        <section class="vending-machine-hero">
+            <div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                    <h2 style="font-size:22px; margin:0;">Unit ML-VEND-01 (Main Kiosk)</h2>
+                    <span class="vending-status-pill">
+                        <span class="pulse-dot"></span> IoT Hardware Online
+                    </span>
+                </div>
+                <p style="font-size:13.5px; color:#CBD5E1; margin:0;">
+                    Microcontroller: Arduino/ESP32 • IR Sensor Active • Motor Actuators Calibrated
+                </p>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <a href="medicine-reference.html" class="btn btn-secondary btn-sm">
+                    📚 50 Essential Meds Reference
+                </a>
+                <button class="btn btn-secondary btn-sm" onclick="loadMedicineStock()">
+                    🔄 Refresh Stock
+                </button>
+                <a href="consult.html" class="btn btn-primary btn-sm">
+                    🩺 Need Prescription?
+                </a>
+            </div>
+        </section>
+
+        <!-- MEDICINES GRID -->
+        <section class="cards-grid" id="medicinesGridContainer">
+            <div style="text-align:center; grid-column:1/-1; padding:40px; color:var(--text-muted);">
+                Loading live vending machine inventory...
+            </div>
+        </section>
+
+    </main>
+
+</div>
+
+<!-- SMART DISPENSING INTERACTIVE MODAL -->
+<div id="dispenseModal" class="dispense-modal-overlay">
+    <div class="dispense-modal" id="dispenseModalContent">
+        
+        <!-- Step 1: Confirmation & Details -->
+        <div id="dispenseStep1">
+            <div class="slot-tag" id="dispenseModalSlot">Slot #1</div>
+            <div style="font-size:48px; margin-bottom:12px;">💊</div>
+            <h3 id="dispenseModalMedName" style="font-size:22px; margin-bottom:6px; color:var(--text-main);">Paracetamol 500mg</h3>
+            <p id="dispenseModalCategory" style="font-size:13px; color:var(--teal); margin-bottom:16px;">Analgesic / Antipyretic</p>
+
+            <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:16px; border-radius:var(--radius-md); text-align:left; margin-bottom:20px; font-size:13px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span style="color:var(--text-muted);">Price per strip:</span>
+                    <strong id="dispenseModalPrice" style="color:var(--text-main);">₹25.00</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span style="color:var(--text-muted);">Available Units:</span>
+                    <span class="status-badge available" id="dispenseModalStock">45 in stock</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="color:var(--text-muted);">Quantity:</span>
+                    <select id="dispenseQty" class="form-control" style="width:auto; padding:4px 28px 4px 12px; margin:0;" onchange="updateTotalCost()">
+                        <option value="1">1 Strip</option>
+                        <option value="2">2 Strips</option>
+                        <option value="3">3 Strips</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; font-size:16px;">
+                <strong style="color:var(--text-main);">Total Amount:</strong>
+                <strong style="color:var(--teal); font-size:20px;" id="dispenseTotalCost">₹25.00</strong>
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <button class="btn btn-secondary btn-block" onclick="closeDispenseModal()">Cancel</button>
+                <button class="btn btn-primary btn-block" onclick="triggerHardwareDispense()">
+                    Confirm & Dispense ⚡
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: IoT Dispense Animation & IR Sensor -->
+        <div id="dispenseStep2" style="display:none;">
+            <h3 style="font-size:20px; color:var(--teal); margin-bottom:6px;">Dispensing in Progress...</h3>
+            <p style="font-size:13px; color:var(--text-muted);">Transmitting command to Microcontroller Motor Slot</p>
+
+            <div class="dispense-motor-spinner"></div>
+
+            <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:14px; border-radius:var(--radius-md); font-size:12.5px; font-family:'JetBrains Mono', monospace; text-align:left; color:var(--text-muted); margin-bottom:20px;">
+                <div>> [TX] <span id="logCmd">DISPENSE_SLOT_1_QTY_1</span></div>
+                <div>> [MOTOR] Rotating dispensing spiral coil...</div>
+                <div id="logSensor" style="color:var(--warning);">> [IR_SENSOR] Awaiting item drop verification...</div>
+            </div>
+        </div>
+
+        <!-- Step 3: Success Confirmation -->
+        <div id="dispenseStep3" style="display:none;">
+            <div style="font-size:54px; margin-bottom:12px;">🎉</div>
+            <h3 style="font-size:22px; color:var(--success); margin-bottom:6px;">Medicine Dispensed!</h3>
+            <p style="font-size:13.5px; color:var(--text-main); margin-bottom:20px;">
+                Please collect your medicine from the vending tray below.
+            </p>
+
+            <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:16px; border-radius:var(--radius-md); font-size:13px; margin-bottom:20px; text-align:left;">
+                <div>📦 <strong>Order ID:</strong> <span id="successOrderId" style="color:var(--teal);">VEND-1029</span></div>
+                <div>✅ <strong>IR Sensor:</strong> Verified item drop in tray</div>
+                <div>🕒 <strong>Timestamp:</strong> <span id="successTime" style="color:var(--text-muted);">Just now</span></div>
+            </div>
+
+            <button class="btn btn-primary btn-block" onclick="finishDispense()">Done</button>
+        </div>
+
+    </div>
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/patient.js"></script>
+<script>
+let allMedicines = [];
+let selectedMedicine = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadMedicineStock();
+});
+
+async function loadMedicineStock() {
+    try {
+        const res = await fetch(`${API_BASE}/api/vending/medicines`);
+        allMedicines = await res.json();
+        renderMedicines(allMedicines);
+    } catch (e) {
+        console.error("Medicines load error:", e);
+        document.getElementById("medicinesGridContainer").innerHTML = `
+            <div style="text-align:center; grid-column:1/-1; padding:40px; color:var(--emergency);">
+                Failed to connect to Vending Machine database.
+            </div>
+        `;
+    }
+}
+
+function renderMedicines(meds) {
+    const container = document.getElementById("medicinesGridContainer");
+    if (meds.length === 0) {
+        container.innerHTML = `<div style="text-align:center; grid-column:1/-1; padding:40px; color:var(--text-muted);">No medicines matched your search.</div>`;
+        return;
+    }
+
+    let html = "";
+    meds.forEach(m => {
+        const isAvailable = m.stock_quantity > 0;
+        const badgeClass = isAvailable ? "available" : "outofstock";
+        const badgeText = isAvailable ? `In Stock (${m.stock_quantity})` : "Out of Stock";
+
+        html += `
+            <div class="medicine-slot-card">
+                <div class="slot-tag">Slot #${m.slot_number || m.id}</div>
+                <div>
+                    <div style="font-size:28px; margin-bottom:10px;">💊</div>
+                    <h3 style="font-size:17px; margin-bottom:4px;">${m.name}</h3>
+                    <p style="font-size:12px; color:var(--teal); margin-bottom:8px;">${m.category || 'Pharmaceutical'}</p>
+                    <p style="font-size:13px; color:var(--text-muted); line-height:1.4; margin-bottom:14px;">
+                        ${m.description || m.usage_instructions || 'Approved OTC essential medication.'}
+                    </p>
+                </div>
+
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:var(--bg-input); padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                        <strong style="color:var(--text-main); font-size:15px;">₹${parseFloat(m.price).toFixed(2)}</strong>
+                        <span class="status-badge ${badgeClass}">${badgeText}</span>
+                    </div>
+
+                    ${isAvailable ? `
+                        <button class="btn btn-primary btn-block" onclick="openDispenseModal(${m.id})">
+                            Get Medicine ⚡
+                        </button>
+                    ` : `
+                        <button class="btn btn-secondary btn-block" disabled>
+                            Out of Stock
+                        </button>
+                    `}
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function filterMedicines(query) {
+    const q = (query || "").toLowerCase();
+    const filtered = allMedicines.filter(m => 
+        m.name.toLowerCase().includes(q) ||
+        (m.category && m.category.toLowerCase().includes(q)) ||
+        (m.description && m.description.toLowerCase().includes(q))
+    );
+    renderMedicines(filtered);
+}
+
+function openDispenseModal(medicineId) {
+    selectedMedicine = allMedicines.find(m => m.id === medicineId);
+    if (!selectedMedicine) return;
+
+    document.getElementById("dispenseModalSlot").innerText = `Slot #${selectedMedicine.slot_number || selectedMedicine.id}`;
+    document.getElementById("dispenseModalMedName").innerText = selectedMedicine.name;
+    document.getElementById("dispenseModalCategory").innerText = selectedMedicine.category;
+    document.getElementById("dispenseModalPrice").innerText = `₹${parseFloat(selectedMedicine.price).toFixed(2)}`;
+    document.getElementById("dispenseModalStock").innerText = `${selectedMedicine.stock_quantity} available`;
+    document.getElementById("dispenseQty").value = "1";
+    updateTotalCost();
+
+    document.getElementById("dispenseStep1").style.display = "block";
+    document.getElementById("dispenseStep2").style.display = "none";
+    document.getElementById("dispenseStep3").style.display = "none";
+    document.getElementById("dispenseModal").style.display = "flex";
+}
+
+function updateTotalCost() {
+    if (!selectedMedicine) return;
+    const qty = parseInt(document.getElementById("dispenseQty").value) || 1;
+    const total = selectedMedicine.price * qty;
+    document.getElementById("dispenseTotalCost").innerText = `₹${total.toFixed(2)}`;
+}
+
+function closeDispenseModal() {
+    document.getElementById("dispenseModal").style.display = "none";
+}
+
+async function triggerHardwareDispense() {
+    if (!selectedMedicine) return;
+    const qty = parseInt(document.getElementById("dispenseQty").value) || 1;
+
+    // Switch to step 2 animation
+    document.getElementById("dispenseStep1").style.display = "none";
+    document.getElementById("dispenseStep2").style.display = "block";
+    document.getElementById("logCmd").innerText = `DISPENSE_SLOT_${selectedMedicine.slot_number || selectedMedicine.id}_QTY_${qty}`;
+
+    const patient = Auth.getSession("patient");
+    const patientName = patient ? patient.name : "Walk-in Patient";
+    const patientPhone = patient ? patient.phone : "N/A";
+
+    try {
+        // Send dispense API call
+        const res = await fetch(`${API_BASE}/api/vending/dispense`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                medicineId: selectedMedicine.id,
+                slotNumber: selectedMedicine.slot_number,
+                patientName: patientName,
+                patientPhone: patientPhone,
+                quantity: qty
+            })
+        });
+
+        const data = await res.json();
+
+        // Simulate motor rotation & IR sensor verification delay (1.5s)
+        setTimeout(() => {
+            document.getElementById("logSensor").style.color = "var(--success)";
+            document.getElementById("logSensor").innerText = "> [IR_SENSOR] Optical beam cut confirmed: Medicine dropped into tray ✅";
+
+            setTimeout(() => {
+                document.getElementById("dispenseStep2").style.display = "none";
+                document.getElementById("dispenseStep3").style.display = "block";
+                document.getElementById("successOrderId").innerText = data.orderId || "VEND-SUCCESS";
+                document.getElementById("successTime").innerText = new Date().toLocaleTimeString();
+                loadMedicineStock(); // Refresh stock in UI
+            }, 800);
+        }, 1500);
+
+    } catch (e) {
+        console.error("Dispense error:", e);
+        alert("Hardware communication error. Dispensing failed.");
+        closeDispenseModal();
+    }
+}
+
+function finishDispense() {
+    closeDispenseModal();
+    Auth.showToast("Dispensing completed successfully!", "success");
+}
+</script>
+
+</body>
+</html>

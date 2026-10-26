@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Health Profile - Medi Lingo</title>
+    <meta name="description" content="Manage your personal health profile and view private digital consultation records.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="index.html" class="brand">
+            <div class="brand-icon">🩺</div>
+            <span class="brand-text">Medi Lingo</span>
+            <span class="brand-badge">AI</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <span class="nav-label">Patient Navigation</span>
+            <a href="index.html" class="nav-item">
+                <span class="icon">🏠</span> Dashboard
+            </a>
+            <a href="consult.html" class="nav-item">
+                <span class="icon">🎙️</span> Start Consultation
+            </a>
+            <a href="medicine-reference.html" class="nav-item">
+                <span class="icon">📚</span> Medicine Reference
+            </a>
+            <a href="medicines.html" class="nav-item">
+                <span class="icon">💊</span> Medicines Available
+            </a>
+            <a href="doctors.html" class="nav-item">
+                <span class="icon">👨‍⚕️</span> Available Doctors
+            </a>
+            <a href="patient-profile.html" class="nav-item active">
+                <span class="icon">📋</span> My Prescriptions
+            </a>
+            <button class="nav-item emergency" onclick="PatientController.triggerEmergency()">
+                <span class="icon">🚨</span> Emergency SOS
+            </button>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" id="headerPatientAvatar">P</div>
+            <div class="user-details">
+                <div class="user-name" id="headerPatientName">Guest Patient</div>
+                <div class="user-role">Patient Portal</div>
+            </div>
+            <button id="headerLogoutBtn" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('patient', 'patient-login.html')">🚪</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>📋 My Health Records & Profile</h1>
+                </div>
+                <p>Private medical history, active prescriptions, and past consultations</p>
+            </div>
+            <div class="top-bar-actions">
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+                <a href="consult.html" class="btn btn-primary btn-sm">
+                    🎙️ New Consultation
+                </a>
+            </div>
+        </header>
+
+        <!-- PROFILE HEADER CARD -->
+        <section class="card" style="margin-bottom:28px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;">
+                <div style="display:flex; align-items:center; gap:18px;">
+                    <div class="user-avatar" style="width:64px; height:64px; font-size:24px; border-width:3px;" id="profileAvatar">P</div>
+                    <div>
+                        <h2 style="font-size:22px; margin-bottom:4px;" id="profileName">Patient Name</h2>
+                        <div style="display:flex; gap:12px; font-size:13px; color:var(--text-muted); flex-wrap:wrap;">
+                            <span>UID: <strong id="profileUid" style="color:var(--teal);">PAT-102948</strong></span> • 
+                            <span>Mobile: <strong id="profilePhone" style="color:var(--text-main);">+91 9840112233</strong></span> • 
+                            <span>Age/Gender: <strong id="profileAgeGender" style="color:var(--text-main);">28 yrs • Male</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button class="btn btn-secondary btn-sm" onclick="Auth.logout('patient', 'patient-login.html')">
+                        🚪 Logout
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- PERSONAL CONSULTATIONS DATA TABLE -->
+        <section class="table-wrapper">
+            <div class="table-header">
+                <h3>📜 My Past Consultations & Prescriptions</h3>
+                <span style="font-size:12px; color:var(--teal); background:rgba(20,184,166,0.1); padding:4px 10px; border-radius:var(--radius-full); border:1px solid rgba(20,184,166,0.25);">🔒 Private Self Records</span>
+            </div>
+
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Reported Symptoms</th>
+                        <th>Suggested Medicine</th>
+                        <th>Dosage</th>
+                        <th>Triage Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="personalConsultationsTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">
+                            Loading your consultation records...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/patient.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    loadPatientProfile();
+});
+
+async function loadPatientProfile() {
+    const patient = Auth.getSession("patient");
+    if (!patient) {
+        // If not logged in, prompt or load guest data
+        document.getElementById("profileName").innerText = "Guest Patient";
+        document.getElementById("profileUid").innerText = "GUEST";
+        document.getElementById("profilePhone").innerText = "Not registered";
+        document.getElementById("profileAgeGender").innerText = "--";
+        
+        // Show only last session's consultation from localStorage if exists
+        const lastRx = localStorage.getItem("medilingo_last_rx");
+        if (lastRx) {
+            const rx = JSON.parse(lastRx);
+            renderPersonalRecords([rx]);
+        } else {
+            document.getElementById("personalConsultationsTableBody").innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">
+                        No consultation records found. <a href="patient-login.html" style="color:var(--teal);">Sign In</a> to save history permanently.
+                    </td>
+                </tr>
+            `;
+        }
+        return;
+    }
+
+    document.getElementById("profileName").innerText = patient.name;
+    document.getElementById("profileAvatar").innerText = patient.name.charAt(0).toUpperCase();
+    document.getElementById("profileUid").innerText = patient.patient_uid || `PAT-${patient.id}`;
+    document.getElementById("profilePhone").innerText = patient.phone;
+    document.getElementById("profileAgeGender").innerText = `${patient.age || 'N/A'} yrs • ${patient.gender || 'Not specified'}`;
+
+    try {
+        const res = await fetch(`${API_BASE}/api/patient/profile/${patient.patient_uid || patient.id}`);
+        const data = await res.json();
+        if (data.success && data.consultations) {
+            renderPersonalRecords(data.consultations);
+        } else {
+            renderPersonalRecords([]);
+        }
+    } catch (e) {
+        console.error("Profile load error:", e);
+    }
+}
+
+function renderPersonalRecords(records) {
+    const tbody = document.getElementById("personalConsultationsTableBody");
+    if (records.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">
+                    No consultations recorded for your account yet.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = "";
+    records.forEach(r => {
+        const isEmergency = r.triage_level === "Emergency";
+        const dateStr = r.last_visited ? new Date(r.last_visited).toLocaleDateString() : (r.date || "Today");
+
+        html += `
+            <tr>
+                <td>${dateStr}</td>
+                <td style="max-width:220px;">${r.symptom || r.symptoms}</td>
+                <td><strong style="color:var(--teal);">${r.medication_suggested || r.medicine}</strong></td>
+                <td>${r.dosage || 'As directed'}</td>
+                <td>
+                    <span class="status-badge ${isEmergency ? 'emergency' : 'approved'}">
+                        ${isEmergency ? 'Emergency' : (r.triage_level || 'Completed')}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-secondary btn-sm" onclick="viewSpecificPrescription('${encodeURIComponent(JSON.stringify(r))}')">
+                        📄 View Rx
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+function viewSpecificPrescription(rxDataStr) {
+    const rx = JSON.parse(decodeURIComponent(rxDataStr));
+    localStorage.setItem("medilingo_last_rx", JSON.stringify(rx));
+    window.location.href = "prescription.html";
+}
+</script>
+
+</body>
+</html>

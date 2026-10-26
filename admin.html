@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Medi Lingo Executive Console</title>
+    <meta name="description" content="Central management dashboard for Medi Lingo platform, doctor approvals, and consultation oversight.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="admin.html" class="brand">
+            <div class="brand-icon" style="background: linear-gradient(135deg, #3b82f6, #6366f1);">🛡️</div>
+            <span class="brand-text">Medi Lingo</span>
+            <span class="brand-badge" style="background:rgba(59,130,246,0.2); color:#60a5fa; border-color:rgba(59,130,246,0.4);">Admin</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <span class="nav-label">Platform Control</span>
+            <a href="admin.html" class="nav-item active">
+                <span class="icon">📊</span> Overview & KPIs
+            </a>
+            <a href="doctor-approval.html" class="nav-item">
+                <span class="icon">📜</span> Doctor Verification
+            </a>
+            <a href="admin-consultations.html" class="nav-item">
+                <span class="icon">📋</span> All Consultations
+            </a>
+            <a href="medicines.html" class="nav-item">
+                <span class="icon">💊</span> Vending Inventory
+            </a>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" style="border-color:#6366f1; background:#1e1b4b;">A</div>
+            <div class="user-details">
+                <div class="user-name" id="adminDisplayName">Super Administrator</div>
+                <div class="user-role" style="color:#818cf8;">Medical Board Admin</div>
+            </div>
+            <button style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('admin', 'admin-login.html')">🚪</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>🛡️ System Overview & Platform Health</h1>
+                </div>
+                <p>Real-time analytics across patients, verified doctors, AI triage, and IoT smart vending machines</p>
+            </div>
+            <div class="top-bar-actions">
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+                <a href="doctor-approval.html" class="btn btn-blue btn-sm">
+                    📜 Review Pending Doctors
+                </a>
+                <a href="admin-consultations.html" class="btn btn-secondary btn-sm">
+                    📋 View Consultation Log
+                </a>
+            </div>
+        </header>
+
+        <!-- STATS KPI GRID (6 METRICS) -->
+        <section class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+            
+            <!-- Stat 1: Total Patients -->
+            <div class="card">
+                <div class="card-icon-badge">👥</div>
+                <h4 style="font-size:13px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Total Patients</h4>
+                <div style="font-size:28px; font-weight:800; color:var(--text-main);" id="statTotalPatients">--</div>
+                <span style="font-size:11.5px; color:var(--teal);">Active Registered</span>
+            </div>
+
+            <!-- Stat 2: Total Doctors -->
+            <div class="card">
+                <div class="card-icon-badge blue">👨‍⚕️</div>
+                <h4 style="font-size:13px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Total Doctors</h4>
+                <div style="font-size:28px; font-weight:800; color:#60a5fa;" id="statTotalDoctors">--</div>
+                <span style="font-size:11.5px; color:#93c5fd;">Physicians on Board</span>
+            </div>
+
+            <!-- Stat 3: Pending Approvals -->
+            <div class="card" style="border-color:rgba(245,158,11,0.3);">
+                <div class="card-icon-badge orange">⏳</div>
+                <h4 style="font-size:13px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Pending Approvals</h4>
+                <div style="font-size:28px; font-weight:800; color:var(--warning);" id="statPendingDoctors">--</div>
+                <a href="doctor-approval.html" style="font-size:11.5px; color:var(--warning);">Verify Certificates →</a>
+            </div>
+
+            <!-- Stat 4: Total Consultations -->
+            <div class="card">
+                <div class="card-icon-badge green">🩺</div>
+                <h4 style="font-size:13px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Total Consultations</h4>
+                <div style="font-size:28px; font-weight:800; color:var(--success);" id="statTotalConsultations">--</div>
+                <span style="font-size:11.5px; color:var(--success);">AI & Telemedicine</span>
+            </div>
+
+            <!-- Stat 5: Emergency Cases -->
+            <div class="card" style="border-color:rgba(239,68,68,0.3);">
+                <div class="card-icon-badge red">🚨</div>
+                <h4 style="font-size:13px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Emergency Triage</h4>
+                <div style="font-size:28px; font-weight:800; color:var(--emergency);" id="statEmergencyCases">--</div>
+                <span style="font-size:11.5px; color:#fca5a5;">High Severity Cases</span>
+            </div>
+
+            <!-- Stat 6: Vending Stock Units -->
+            <div class="card">
+                <div class="card-icon-badge">💊</div>
+                <h4 style="font-size:13px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Vending Stock Units</h4>
+                <div style="font-size:28px; font-weight:800; color:var(--teal);" id="statTotalStock">235</div>
+                <span style="font-size:11.5px; color:var(--teal);">Across 8 Dispenser Slots</span>
+            </div>
+
+        </section>
+
+        <!-- PENDING DOCTORS QUICK WIDGET -->
+        <section class="table-wrapper" style="margin-bottom:32px;">
+            <div class="table-header">
+                <div>
+                    <h3>📜 Doctor Verification Queue</h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0;">Review uploaded telemedicine license certificates and approve/reject physicians</p>
+                </div>
+                <a href="doctor-approval.html" class="btn btn-secondary btn-sm">View All Registrations →</a>
+            </div>
+
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Doctor Name</th>
+                        <th>Reg Number</th>
+                        <th>Contact</th>
+                        <th>Qualification</th>
+                        <th>Certificate File</th>
+                        <th>Status</th>
+                        <th>Verification Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="doctorApprovalTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">
+                            Loading pending doctor registrations...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- RECENT PLATFORM CONSULTATIONS WIDGET -->
+        <section class="table-wrapper">
+            <div class="table-header">
+                <div>
+                    <h3>🩺 Recent Platform Consultations Feed</h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0;">Live multilingual AI triage & clinical prescriptions stream</p>
+                </div>
+                <a href="admin-consultations.html" class="btn btn-secondary btn-sm">Full Consultation Database →</a>
+            </div>
+
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Patient ID</th>
+                        <th>Name</th>
+                        <th>Phone / Lang</th>
+                        <th>Symptoms</th>
+                        <th>Prescribed Medicine</th>
+                        <th>Triage</th>
+                        <th>Attending Doctor</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="adminConsultationsTableBody">
+                    <tr>
+                        <td colspan="9" style="text-align:center; padding:24px; color:var(--text-muted);">
+                            Loading consultations feed...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const admin = AdminController.guardAdmin();
+    if (admin) {
+        AdminController.init();
+        AdminController.loadStats();
+        AdminController.loadPendingDoctors();
+        AdminController.loadAllConsultations();
+    }
+});
+</script>
+
+</body>
+</html>

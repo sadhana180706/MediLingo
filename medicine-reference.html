@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicine Reference & Essential Formulary - Medi Lingo</title>
+    <meta name="description" content="Clinical Medicine Reference Directory based on the WHO Model List of Essential Medicines (2025). Search commonly used medicines by problem, symptom, or medication name.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="index.html" class="brand">
+            <div class="brand-icon">🩺</div>
+            <span class="brand-text">Medi Lingo</span>
+            <span class="brand-badge">AI</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <span class="nav-label">Patient Navigation</span>
+            <a href="index.html" class="nav-item">
+                <span class="icon">🏠</span> Dashboard
+            </a>
+            <a href="consult.html" class="nav-item">
+                <span class="icon">🎙️</span> Start Consultation
+            </a>
+            <a href="medicine-reference.html" class="nav-item active">
+                <span class="icon">📚</span> Medicine Reference
+            </a>
+            <a href="medicines.html" class="nav-item">
+                <span class="icon">💊</span> Medicines Available
+            </a>
+            <a href="doctors.html" class="nav-item">
+                <span class="icon">👨‍⚕️</span> Available Doctors
+            </a>
+            <a href="patient-profile.html" class="nav-item">
+                <span class="icon">📋</span> My Prescriptions
+            </a>
+
+            <button class="nav-item emergency" onclick="PatientController.triggerEmergency()">
+                <span class="icon">🚨</span> Emergency SOS
+            </button>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" id="headerPatientAvatar">P</div>
+            <div class="user-details">
+                <div class="user-name" id="headerPatientName">Guest Patient</div>
+                <div class="user-role">Patient Portal</div>
+            </div>
+            <button id="headerLogoutBtn" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('patient', 'patient-login.html')">🚪</button>
+            <a id="headerLoginBtn" href="patient-login.html" class="btn btn-primary btn-sm" style="display:none; padding:4px 8px; font-size:11px;">Sign In</a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>📚 Medicine Reference & Essential Formulary</h1>
+                </div>
+                <p>Clinical Reference Guide • Aligned with WHO Model List of Essential Medicines (2025)</p>
+            </div>
+
+            <div class="top-bar-actions">
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+                <a href="consult.html" class="btn btn-primary btn-sm">🩺 Consult Doctor</a>
+            </div>
+        </header>
+
+        <!-- MANDATORY EDUCATIONAL MEDICAL DISCLAIMER -->
+        <section class="disclaimer-banner" role="alert">
+            <div class="disclaimer-icon">⚠️</div>
+            <div class="disclaimer-content">
+                <h4>Educational Reference Notice</h4>
+                <p>
+                    <strong>This information is for educational purposes only and is not a substitute for professional medical advice.</strong>
+                    MediLingo does not diagnose medical conditions or issue automated prescriptions based on symptoms alone. For antibiotics and prescription-only medicines, professional clinical consultation with a certified doctor is strictly mandatory before initiating treatment.
+                </p>
+            </div>
+        </section>
+
+        <!-- SEARCH AND FILTER CONTROLS -->
+        <section class="med-ref-controls">
+            <div class="med-ref-search-row">
+                <div class="med-ref-search-input-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input 
+                        type="text" 
+                        id="medRefSearchInput" 
+                        placeholder="Search by health problem (e.g. Fever, Asthma), symptom, or medicine name..." 
+                        oninput="handleSearchInput(this.value)"
+                        aria-label="Search medicines dataset"
+                    >
+                    <button class="clear-search-btn" id="clearSearchBtn" onclick="clearSearch()" title="Clear search">✕</button>
+                </div>
+
+                <div class="med-ref-filter-group">
+                    <select class="med-ref-select" id="prescriptionSelectFilter" onchange="handlePrescriptionFilter(this.value)" aria-label="Filter by prescription status">
+                        <option value="All">All Prescription Types</option>
+                        <option value="OTC">Over-The-Counter (OTC) Only</option>
+                        <option value="Rx">Prescription Required (Rx) Only</option>
+                    </select>
+
+                    <a href="medicines.html" class="btn btn-secondary btn-sm" style="padding:11px 16px; white-space:nowrap;">
+                        💊 Check Vending Machine Stock
+                    </a>
+                </div>
+            </div>
+
+            <!-- CATEGORY PILLS -->
+            <div>
+                <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:8px;">
+                    Filter by Therapeutic Category:
+                </div>
+                <div class="category-pills-wrap" id="categoryPillsContainer">
+                    <!-- Dynamic category pills inserted by medicine-reference.js -->
+                </div>
+            </div>
+        </section>
+
+        <!-- RESULTS HEADER -->
+        <div class="med-ref-results-header">
+            <div class="results-count-badge" id="resultsCountBadge">
+                Loading clinical reference dataset...
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:12px;">
+                <span>🟢 OTC = Over-The-Counter</span>
+                <span>🔒 Rx = Prescription Required</span>
+            </div>
+        </div>
+
+        <!-- MEDICINES REFERENCE GRID (50 CARDS) -->
+        <section class="med-ref-grid" id="medRefGrid">
+            <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">
+                Loading 50 essential medicine reference records...
+            </div>
+        </section>
+
+    </main>
+
+</div>
+
+<!-- DETAILED MEDICINE MODAL -->
+<div id="medicineDetailModal" class="dispense-modal-overlay" style="display:none;" role="dialog" aria-modal="true">
+    <div class="med-detail-modal-box" id="medicineDetailContent">
+        <!-- Filled dynamically by medicine-reference.js -->
+    </div>
+</div>
+
+<!-- EMERGENCY SOS MODAL -->
+<div id="emergencyModal" class="dispense-modal-overlay" style="display:none;">
+    <div class="dispense-modal" style="border-color:var(--emergency); max-width:500px;">
+        <div style="font-size:50px; margin-bottom:12px; animation: pulseMic 1s infinite;">🚨</div>
+        <h2 style="color:var(--emergency); margin-bottom:8px;">EMERGENCY MEDICAL ASSISTANCE</h2>
+        <p style="font-size:13.5px; color:var(--text-main); margin-bottom:20px;">
+            If you or someone around you is experiencing severe chest pain, extreme breathing difficulty, heavy trauma, or unconsciousness:
+        </p>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+            <a href="tel:108" class="btn btn-danger" style="font-size:16px;">
+                📞 Call 108 (Ambulance)
+            </a>
+            <a href="tel:112" class="btn btn-secondary" style="font-size:16px;">
+                📞 Call 112 (National Emergency)
+            </a>
+        </div>
+
+        <div style="background:var(--bg-input); padding:12px; border-radius:var(--radius-md); font-size:12px; color:var(--text-muted); margin-bottom:20px; text-align:left; border:1px solid var(--border-color);">
+            📍 Nearest Emergency Hospital: <strong>Medi Lingo Central Trauma Care Unit (2.4 km)</strong><br>
+            🚨 Emergency GPS broadcast dispatched.
+        </div>
+
+        <button class="btn btn-secondary btn-block" onclick="PatientController.closeEmergency()">Close Emergency Screen</button>
+    </div>
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/patient.js"></script>
+<script src="js/medicine-dataset.js"></script>
+<script src="js/medicine-reference.js"></script>
+
+</body>
+</html>

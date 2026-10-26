@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal Login - Medi Lingo Healthcare</title>
+    <meta name="description" content="Administrative control center login for Medi Lingo platform management and medical verification.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="auth-page-wrapper">
+    <div class="auth-theme-toggle">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+            <span class="theme-toggle-icon">🌙</span>
+            <span class="theme-toggle-text">Dark</span>
+        </button>
+    </div>
+
+    <div class="auth-card" style="border-color: rgba(59, 130, 246, 0.4);">
+        
+        <div class="auth-header">
+            <div class="logo-icon" style="background: linear-gradient(135deg, #3b82f6, #6366f1);">🛡️</div>
+            <h2>Admin Control Center</h2>
+            <p>Medi Lingo Platform Executive Administration</p>
+        </div>
+
+        <div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.25); border-radius:var(--radius-md); padding:10px 14px; margin-bottom:20px; font-size:12px; color:var(--blue);">
+            🛡️ <strong>Admin Credentials:</strong><br>
+            Username: <code>admin@medilingo.com</code> • Password: <code>Admin@2026</code>
+        </div>
+
+        <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+            
+            <div class="form-group">
+                <label class="form-label">Administrator ID / Email</label>
+                <div class="input-icon-wrapper">
+                    <span class="input-icon">🛡️</span>
+                    <input type="text" id="adminUser" class="form-control" placeholder="admin@medilingo.com" value="admin@medilingo.com" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Secure Password</label>
+                <div class="input-icon-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="adminPass" class="form-control" placeholder="Admin@2026" value="Admin@2026" required>
+                </div>
+            </div>
+
+            <button type="submit" id="adminLoginBtn" class="btn btn-blue btn-block" style="margin-top:24px;">
+                Authenticate & Enter Console →
+            </button>
+        </form>
+
+        <div style="text-align:center; margin-top:24px; border-top:1px solid var(--border-color); padding-top:16px; font-size:12px; color:var(--text-sub);">
+            <a href="index.html">← Patient Portal</a> • <a href="doctor-login.html">Doctor Portal →</a>
+        </div>
+
+    </div>
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script>
+async function handleAdminLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById("adminLoginBtn");
+    const username = document.getElementById("adminUser").value.trim();
+    const password = document.getElementById("adminPass").value;
+
+    btn.disabled = true;
+    btn.innerText = "Authenticating Admin Session...";
+
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            Auth.setSession("admin", data.admin);
+            Auth.showToast("Admin session authenticated!", "success");
+            setTimeout(() => {
+                window.location.href = "admin.html";
+            }, 700);
+        } else {
+            alert(data.message || "Invalid administrative credentials");
+            btn.disabled = false;
+            btn.innerText = "Authenticate & Enter Console →";
+        }
+    } catch (err) {
+        console.error("Admin login error:", err);
+        alert("Server connection failed.");
+        btn.disabled = false;
+        btn.innerText = "Authenticate & Enter Console →";
+    }
+}
+</script>
+
+</body>
+</html>

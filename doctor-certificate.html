@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Upload & Verification - Medi Lingo Doctor Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="auth-page-wrapper">
+    <div class="auth-theme-toggle">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+            <span class="theme-toggle-icon">🌙</span>
+            <span class="theme-toggle-text">Dark</span>
+        </button>
+    </div>
+
+    <div class="auth-card" style="max-width: 520px;">
+        
+        <!-- STEP A: UPLOAD FORM (Shown if submitting new cert) -->
+        <div id="uploadSection">
+            <div class="auth-header">
+                <div class="logo-icon">📜</div>
+                <h2>Upload Medical License</h2>
+                <p>State Medical Council Registration / Telemedicine Certificate</p>
+            </div>
+
+            <form id="docCertForm" onsubmit="handleCertificateUpload(event)">
+                
+                <div class="form-group" style="background:var(--bg-input); border:2px dashed var(--border-highlight); border-radius:var(--radius-lg); padding:30px 20px; text-align:center; cursor:pointer;" onclick="document.getElementById('certFileInput').click()">
+                    <div style="font-size:42px; margin-bottom:10px;">📄</div>
+                    <h4 style="font-size:15px; margin-bottom:4px; color:var(--text-main);">Upload Certificate File</h4>
+                    <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">Supported: PDF, JPG, PNG (Max 10MB)</p>
+                    
+                    <input type="file" id="certFileInput" name="certificate" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="handleFileSelected(this)">
+                    <span class="btn btn-secondary btn-sm" id="selectFileBtnText">Select Certificate File</span>
+                </div>
+
+                <div id="selectedFileNameDisplay" style="display:none; background:rgba(20,184,166,0.1); border:1px solid var(--teal); padding:10px 14px; border-radius:var(--radius-sm); font-size:13px; color:var(--teal); margin-bottom:20px;">
+                    ✅ Selected: <span id="fileNameSpan"></span>
+                </div>
+
+                <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:12px 14px; border-radius:var(--radius-md); font-size:12px; color:var(--text-muted); margin-bottom:20px;">
+                    ℹ️ <strong>Security Verification:</strong> Medi Lingo verifies all medical registrations against state registers before enabling teleconsultation privileges.
+                </div>
+
+                <button type="submit" id="certSubmitBtn" class="btn btn-primary btn-block">
+                    Submit Credentials for Admin Approval →
+                </button>
+            </form>
+        </div>
+
+        <!-- STEP B: VERIFICATION STATUS BANNER (Shown after upload or if pending) -->
+        <div id="statusSection" style="display:none; text-align:center;">
+            <div style="font-size:54px; margin-bottom:14px; animation:blinkDot 2s infinite;">⏳</div>
+            <h2 style="font-size:22px; color:var(--warning); margin-bottom:8px;">Verification Pending</h2>
+            <p style="font-size:13.5px; color:var(--text-main); margin-bottom:20px;">
+                Your medical registration certificate has been uploaded and submitted to the <strong>Medi Lingo Medical Board Admin</strong> for verification.
+            </p>
+
+            <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:18px; border-radius:var(--radius-lg); text-align:left; font-size:13px; margin-bottom:24px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span style="color:var(--text-muted);">Doctor Name:</span>
+                    <strong id="statusDocName" style="color:var(--text-main);">Dr. Name</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span style="color:var(--text-muted);">Registration Number:</span>
+                    <code id="statusDocReg" style="color:var(--teal);">TNMC-1029</code>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="color:var(--text-muted);">Current Status:</span>
+                    <span class="status-badge pending" id="statusBadgeDisplay">Pending Review</span>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-secondary btn-block" onclick="checkLiveVerificationStatus()">
+                    🔄 Refresh Status
+                </button>
+                <a href="doctor-login.html" class="btn btn-primary btn-block">
+                    Doctor Login
+                </a>
+            </div>
+
+            <p style="font-size:12px; color:var(--text-sub); margin-top:20px;">
+                Admins approve registrations in the <a href="doctor-approval.html">Admin Approval Portal</a>.
+            </p>
+        </div>
+
+    </div>
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script>
+let pendingDoc = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+    const docDataStr = sessionStorage.getItem("medilingo_pending_doc");
+    if (docDataStr) {
+        pendingDoc = JSON.parse(docDataStr);
+    } else {
+        // Check if there is an existing doctor in session with Pending status
+        const activeDoc = Auth.getSession("doctor");
+        if (activeDoc) {
+            showPendingStatus(activeDoc);
+        }
+    }
+});
+
+function handleFileSelected(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        document.getElementById("fileNameSpan").innerText = file.name;
+        document.getElementById("selectedFileNameDisplay").style.display = "block";
+        document.getElementById("selectFileBtnText").innerText = "Change File";
+    }
+}
+
+async function handleCertificateUpload(e) {
+    e.preventDefault();
+    if (!pendingDoc) {
+        alert("Session expired. Please start registration again.");
+        window.location.href = "doctor-register.html";
+        return;
+    }
+
+    const btn = document.getElementById("certSubmitBtn");
+    const fileInput = document.getElementById("certFileInput");
+    
+    btn.disabled = true;
+    btn.innerText = "Uploading certificate...";
+
+    const formData = new FormData();
+    formData.append("name", pendingDoc.name);
+    formData.append("reg_number", pendingDoc.reg_number);
+    formData.append("email", pendingDoc.email);
+    formData.append("phone", pendingDoc.phone);
+    formData.append("password", pendingDoc.password);
+    formData.append("specialization", pendingDoc.specialization);
+    formData.append("qualification", pendingDoc.qualification);
+    formData.append("experience", pendingDoc.experience);
+
+    if (fileInput.files[0]) {
+        formData.append("certificate", fileInput.files[0]);
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/doctor/register`, {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            Auth.setSession("doctor", {
+                id: data.doctorId,
+                name: pendingDoc.name,
+                reg_number: pendingDoc.reg_number,
+                email: pendingDoc.email,
+                phone: pendingDoc.phone,
+                status: "Pending"
+            });
+            showPendingStatus(pendingDoc);
+        } else {
+            alert(data.message || "Registration failed.");
+            btn.disabled = false;
+            btn.innerText = "Submit Credentials for Admin Approval →";
+        }
+    } catch (err) {
+        console.error("Upload error:", err);
+        alert("Connection error during certificate upload.");
+        btn.disabled = false;
+        btn.innerText = "Submit Credentials for Admin Approval →";
+    }
+}
+
+function showPendingStatus(doc) {
+    document.getElementById("uploadSection").style.display = "none";
+    document.getElementById("statusSection").style.display = "block";
+    document.getElementById("statusDocName").innerText = doc.name;
+    document.getElementById("statusDocReg").innerText = doc.reg_number;
+}
+
+async function checkLiveVerificationStatus() {
+    const doc = Auth.getSession("doctor") || pendingDoc;
+    if (!doc) {
+        window.location.href = "doctor-login.html";
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/doctor/status/${doc.email || doc.reg_number || doc.id}`);
+        const data = await res.json();
+        if (data.success && data.doctor) {
+            const updated = data.doctor;
+            if (updated.status === "Approved") {
+                Auth.setSession("doctor", updated);
+                Auth.showToast("🎉 Congratulations! Your medical profile is APPROVED!", "success");
+                setTimeout(() => {
+                    window.location.href = "doctor-dashboard.html";
+                }, 1000);
+            } else if (updated.status === "Rejected") {
+                document.getElementById("statusBadgeDisplay").className = "status-badge rejected";
+                document.getElementById("statusBadgeDisplay").innerText = "Rejected by Admin";
+                alert("Your registration was rejected. Please contact administration.");
+            } else {
+                Auth.showToast("Verification still pending admin review.", "warning");
+            }
+        }
+    } catch (e) {
+        console.error("Status check error:", e);
+    }
+}
+</script>
+
+</body>
+</html>

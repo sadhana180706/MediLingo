@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - Medi Lingo Telemedicine</title>
+    <meta name="description" content="Manage incoming patient consultation requests, issue digital prescriptions and review clinical history.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="doctor-dashboard.html" class="brand">
+            <div class="brand-icon" style="background: linear-gradient(135deg, #0ea5e9, #10b981);">👨‍⚕️</div>
+            <span class="brand-text">Medi Lingo</span>
+            <span class="brand-badge" style="background:rgba(59,130,246,0.15); color:#60a5fa; border-color:rgba(59,130,246,0.3);">Doctor</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <span class="nav-label">Clinical Workflow</span>
+            <a href="doctor-dashboard.html" class="nav-item active">
+                <span class="icon">📊</span> Dashboard & Requests
+            </a>
+            <a href="doctor-history.html" class="nav-item">
+                <span class="icon">📜</span> Consultation History
+            </a>
+            <a href="medicines.html" class="nav-item">
+                <span class="icon">💊</span> Vending Medicines
+            </a>
+            <a href="doctor-profile.html" class="nav-item">
+                <span class="icon">👤</span> My Profile & License
+            </a>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" style="border-color:#38bdf8;" id="docAvatarLetter">D</div>
+            <div class="user-details">
+                <div class="user-name doc-name">Dr. Medical Practitioner</div>
+                <div class="user-role doc-spec">General Medicine</div>
+            </div>
+            <button style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('doctor', 'doctor-login.html')">🚪</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>Hi <span class="doc-name" style="color:var(--teal);">Doctor</span> 👋</h1>
+                </div>
+                <p>Telemedicine Clinical Consultation Console • <span class="doc-spec">General Physician</span> (<span class="doc-reg">Verified</span>)</p>
+            </div>
+            <div class="top-bar-actions">
+                <label style="display:flex; align-items:center; gap:8px; background:var(--bg-card); padding:8px 14px; border-radius:var(--radius-full); border:1px solid var(--border-color); font-size:13px; cursor:pointer;">
+                    <input type="checkbox" id="onlineStatusToggle" checked onchange="toggleOnlineStatus(this.checked)">
+                    <span style="color:var(--success); font-weight:600;" id="onlineStatusText">🟢 Accepting Patients</span>
+                </label>
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+                <a href="doctor-history.html" class="btn btn-secondary btn-sm">📜 View History</a>
+            </div>
+        </header>
+
+        <!-- KPI SUMMARY CARDS -->
+        <section class="cards-grid">
+            
+            <div class="card">
+                <div class="card-icon-badge blue">⏳</div>
+                <h3>Patient Queue</h3>
+                <p>Incoming teleconsultation and prescription review requests.</p>
+                <div style="font-size:26px; font-weight:800; color:#60a5fa;" id="statQueueCount">Live Queue</div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon-badge green">🩺</div>
+                <h3>Completed Today</h3>
+                <p>Prescriptions issued and patients assisted across languages.</p>
+                <div style="font-size:26px; font-weight:800; color:var(--success);" id="statCompletedCount">12 Consultations</div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon-badge orange">⭐</div>
+                <h3>Doctor Rating</h3>
+                <p>Patient feedback and state medical board compliance score.</p>
+                <div style="font-size:26px; font-weight:800; color:var(--warning);">4.9 / 5.0</div>
+            </div>
+
+        </section>
+
+        <!-- PATIENT REQUEST SYSTEM -->
+        <section class="table-wrapper" style="padding:24px; margin-bottom:32px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
+                <div>
+                    <h3 style="font-size:18px; margin-bottom:4px;">🚨 Incoming Patient Requests</h3>
+                    <p style="font-size:13px; color:var(--text-muted); margin:0;">Real-time queue of patients requiring clinical review or custom prescription</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="DoctorController.loadRequests()">
+                    🔄 Refresh Queue
+                </button>
+            </div>
+
+            <div id="requestsList">
+                <div style="text-align:center; padding:30px; color:var(--text-muted);">
+                    Checking for incoming patient requests...
+                </div>
+            </div>
+        </section>
+
+        <!-- RECENT CONSULTATION LOG -->
+        <section class="table-wrapper">
+            <div class="table-header">
+                <h3>📜 Recent Consultations</h3>
+                <a href="doctor-history.html" style="font-size:13px;">View Full History →</a>
+            </div>
+
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Patient</th>
+                        <th>Reported Symptoms</th>
+                        <th>Prescribed Medicine</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="doctorHistoryTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">
+                            Loading recent consultations...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+
+</div>
+
+<!-- INTERACTIVE DOCTOR CONSULTATION & PRESCRIPTION MODAL -->
+<div id="doctorPrescriptionModal" class="dispense-modal-overlay">
+    <div class="dispense-modal" style="max-width:580px; text-align:left;">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:16px;">
+            <h3 style="font-size:20px; color:var(--teal); margin:0;">🩺 Doctor Consultation</h3>
+            <button style="background:transparent; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;" onclick="DoctorController.closePrescriptionModal()">✕</button>
+        </div>
+
+        <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:14px; border-radius:var(--radius-md); margin-bottom:18px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <strong id="modalPatientName" style="color:var(--text-main); font-size:15px;">Patient Name</strong>
+                <span id="modalPatientInfo" style="font-size:12.5px; color:var(--text-muted);">28 yrs • Male</span>
+            </div>
+            <div style="font-size:13px; color:var(--text-main);">
+                <span style="color:var(--text-sub); font-size:11px; text-transform:uppercase; font-weight:700; display:block;">Symptoms:</span>
+                <span id="modalSymptoms">High fever and headache for 2 days</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Prescribed Medicine *</label>
+            <input type="text" id="rxMedicineInput" class="form-control" placeholder="e.g. Paracetamol 650mg + Multivitamin" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Dosage & Frequency *</label>
+            <input type="text" id="rxDosageInput" class="form-control" placeholder="e.g. 1 tablet twice daily after meals for 3 days" value="1 tablet twice daily after meals for 3 days" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Special Clinical Instructions / Advice</label>
+            <textarea id="rxInstructionsInput" class="form-control" placeholder="e.g. Drink plenty of warm water, adequate rest, return if fever > 102F" rows="2">Drink plenty of warm water, adequate bed rest. Review after 3 days if symptoms persist.</textarea>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:20px;">
+            <button type="button" class="btn btn-secondary btn-block" onclick="DoctorController.closePrescriptionModal()">Cancel</button>
+            <button type="button" class="btn btn-primary btn-block" onclick="DoctorController.submitPrescription()">
+                🚀 Send Prescription to Patient
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/doctor.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const doc = DoctorController.guardDashboard();
+    if (doc) {
+        DoctorController.loadRequests();
+        DoctorController.loadHistory();
+        if (doc.name) {
+            document.getElementById("docAvatarLetter").innerText = doc.name.replace("Dr. ", "").charAt(0).toUpperCase();
+        }
+    }
+});
+
+function toggleOnlineStatus(isOnline) {
+    const statusText = document.getElementById("onlineStatusText");
+    if (isOnline) {
+        statusText.innerHTML = "🟢 Accepting Patients";
+        statusText.style.color = "var(--success)";
+        Auth.showToast("You are now ONLINE and accepting patient requests.", "success");
+    } else {
+        statusText.innerHTML = "🟡 Away / Offline";
+        statusText.style.color = "var(--warning)";
+        Auth.showToast("Status set to OFFLINE.", "warning");
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Registration - Medi Lingo</title>
+    <meta name="description" content="Create a new Medi Lingo patient profile for multilingual AI triage and healthcare services.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="auth-page-wrapper">
+    <div class="auth-theme-toggle">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+            <span class="theme-toggle-icon">🌙</span>
+            <span class="theme-toggle-text">Dark</span>
+        </button>
+    </div>
+
+    <div class="auth-card" style="max-width: 520px;">
+        
+        <div class="auth-header">
+            <div class="logo-icon">🌿</div>
+            <h2>New Patient Account</h2>
+            <p>Healthcare without language barriers</p>
+        </div>
+
+        <form id="patientRegisterForm" onsubmit="handlePatientRegister(event)">
+            
+            <div class="form-group">
+                <label class="form-label">Full Name *</label>
+                <div class="input-icon-wrapper">
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="regName" class="form-control" placeholder="e.g. Anand Kumar" required>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                <div class="form-group">
+                    <label class="form-label">Mobile Number *</label>
+                    <div class="input-icon-wrapper">
+                        <span class="input-icon">📱</span>
+                        <input type="tel" id="regPhone" class="form-control" placeholder="10-digit mobile" required pattern="[0-9]{10}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Age *</label>
+                    <div class="input-icon-wrapper">
+                        <span class="input-icon">🎂</span>
+                        <input type="number" id="regAge" class="form-control" placeholder="e.g. 28" min="1" max="120" required>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                <div class="form-group">
+                    <label class="form-label">Email (Optional)</label>
+                    <div class="input-icon-wrapper">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" id="regEmail" class="form-control" placeholder="patient@example.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Gender</label>
+                    <select id="regGender" class="form-control">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                <div class="form-group">
+                    <label class="form-label">Create Password *</label>
+                    <div class="input-icon-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="regPassword" class="form-control" placeholder="Min 6 chars" required minlength="6">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirm Password *</label>
+                    <div class="input-icon-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="regConfirmPassword" class="form-control" placeholder="Repeat password" required minlength="6">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="font-size:12.5px; color:var(--text-muted);">
+                <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
+                    <input type="checkbox" required style="margin-top:3px;">
+                    <span>I agree to the Medi Lingo Health Terms of Service & Privacy Policy. I understand that AI recommendations provide automated assistance and are not a replacement for professional clinical emergencies.</span>
+                </label>
+            </div>
+
+            <button type="submit" id="patientRegBtn" class="btn btn-primary btn-block">
+                Complete Registration & Continue →
+            </button>
+        </form>
+
+        <div style="text-align:center; margin-top:20px; font-size:13.5px; color:var(--text-muted);">
+            Already have an account? 
+            <a href="patient-login.html" style="font-weight:600;">Sign In</a>
+        </div>
+
+    </div>
+</div>
+
+<!-- Simulated OTP Modal -->
+<div id="otpVerifyModal" class="dispense-modal-overlay">
+    <div class="dispense-modal" style="max-width:420px;">
+        <div style="font-size:40px; margin-bottom:12px;">📱</div>
+        <h3 style="color:var(--text-main); margin-bottom:8px;">Verify Mobile Number</h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">
+            We sent a verification code to <strong id="otpDisplayPhone" style="color:var(--text-main);"></strong>.
+        </p>
+
+        <div class="form-group">
+            <input type="text" id="modalOtpInput" class="form-control" placeholder="Enter 6-digit OTP" style="text-align:center; font-size:20px; letter-spacing:4px; font-weight:700;" maxlength="6" value="582910">
+            <small style="color:var(--teal); font-size:12px; margin-top:6px; display:block;">Demo OTP filled: 582910</small>
+        </div>
+
+        <button class="btn btn-primary btn-block" onclick="submitOtpVerification()">Verify & Go to Dashboard</button>
+    </div>
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script>
+let pendingRegistrationData = null;
+
+async function handlePatientRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById("regName").value.trim();
+    const phone = document.getElementById("regPhone").value.trim();
+    const age = document.getElementById("regAge").value.trim();
+    const email = document.getElementById("regEmail").value.trim();
+    const gender = document.getElementById("regGender").value;
+    const password = document.getElementById("regPassword").value;
+    const confirmPassword = document.getElementById("regConfirmPassword").value;
+
+    if (password !== confirmPassword) {
+        alert("Passwords do not match. Please try again.");
+        return;
+    }
+
+    pendingRegistrationData = { name, phone, age, email, gender, password };
+
+    // Show OTP modal for verification architecture
+    document.getElementById("otpDisplayPhone").innerText = phone;
+    document.getElementById("otpVerifyModal").style.display = "flex";
+}
+
+async function submitOtpVerification() {
+    const otp = document.getElementById("modalOtpInput").value.trim();
+    if (otp.length < 4) {
+        alert("Please enter the OTP code");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/patient/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(pendingRegistrationData)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            Auth.setSession("patient", data.patient);
+            Auth.showToast("Registration successful! Welcome to Medi Lingo.", "success");
+            setTimeout(() => {
+                window.location.href = "index.html";
+            }, 800);
+        } else {
+            alert(data.message || "Registration failed.");
+        }
+    } catch (err) {
+        console.error("Register error:", err);
+        alert("Server connection error during registration.");
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Registration - Medi Lingo Healthcare</title>
+    <meta name="description" content="Register as a licensed medical practitioner on the Medi Lingo Telemedicine and AI Clinical Assistant Platform.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="auth-page-wrapper">
+    <div class="auth-theme-toggle">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+            <span class="theme-toggle-icon">🌙</span>
+            <span class="theme-toggle-text">Dark</span>
+        </button>
+    </div>
+
+    <div class="auth-card" style="max-width: 580px;">
+        
+        <div class="auth-header">
+            <div class="logo-icon" style="background: linear-gradient(135deg, #0ea5e9, #10b981);">👨‍⚕️</div>
+            <h2>Doctor Registration</h2>
+            <p>Join Medi Lingo's Verified Telemedicine Medical Board</p>
+        </div>
+
+        <form id="doctorRegisterForm" onsubmit="handleDoctorRegisterStep1(event)">
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                <div class="form-group">
+                    <label class="form-label">Full Name with Title *</label>
+                    <div class="input-icon-wrapper">
+                        <span class="input-icon">👨‍⚕️</span>
+                        <input type="text" id="docName" class="form-control" placeholder="e.g. Dr. Ramesh Gupta" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Medical Reg Number *</label>
+                    <div class="input-icon-wrapper">
+                        <span class="input-icon">📜</span>
+                        <input type="text" id="docRegNumber" class="form-control" placeholder="e.g. TNMC-94820" required>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                <div class="form-group">
+                    <label class="form-label">Mobile Number *</label>
+                    <div class="input-icon-wrapper">
+                        <span class="input-icon">📱</span>
+                        <input type="tel" id="docPhone" class="form-control" placeholder="10-digit phone" required pattern="[0-9]{10}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Official Email *</label>
+                    <div class="input-icon-wrapper">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" id="docEmail" class="form-control" placeholder="doctor@clinic.com" required>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                <div class="form-group">
+                    <label class="form-label">Primary Specialization</label>
+                    <select id="docSpec" class="form-control">
+                        <option value="General Medicine">General Medicine</option>
+                        <option value="Pediatrics & Child Care">Pediatrics & Child Care</option>
+                        <option value="Pulmonology & Chest">Pulmonology & Chest</option>
+                        <option value="Dermatology">Dermatology</option>
+                        <option value="Cardiology">Cardiology</option>
+                        <option value="ENT Specialist">ENT Specialist</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Qualification *</label>
+                    <input type="text" id="docQualification" class="form-control" placeholder="e.g. MBBS, MD" required>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                <div class="form-group">
+                    <label class="form-label">Years of Experience</label>
+                    <input type="text" id="docExperience" class="form-control" placeholder="e.g. 8+ Years" value="5+ Years">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Create Password *</label>
+                    <div class="input-icon-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="docPassword" class="form-control" placeholder="Min 6 characters" required minlength="6">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="font-size:12.5px; color:var(--text-muted);">
+                <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
+                    <input type="checkbox" required style="margin-top:3px;">
+                    <span>I declare that I hold a valid state/national medical council registration license and adhere to Telemedicine Practice Guidelines.</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+                Proceed to OTP Verification →
+            </button>
+        </form>
+
+        <div style="text-align:center; margin-top:20px; font-size:13.5px; color:var(--text-muted);">
+            Already registered? 
+            <a href="doctor-login.html" style="font-weight:600;">Doctor Login</a>
+        </div>
+
+        <div style="text-align:center; margin-top:16px; border-top:1px solid var(--border-color); padding-top:16px; font-size:12px; color:var(--text-sub);">
+            Patient seeking consultation? <a href="index.html">Patient Portal</a>
+        </div>
+
+    </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+function handleDoctorRegisterStep1(e) {
+    e.preventDefault();
+    const docData = {
+        name: document.getElementById("docName").value.trim(),
+        reg_number: document.getElementById("docRegNumber").value.trim(),
+        phone: document.getElementById("docPhone").value.trim(),
+        email: document.getElementById("docEmail").value.trim(),
+        specialization: document.getElementById("docSpec").value,
+        qualification: document.getElementById("docQualification").value.trim(),
+        experience: document.getElementById("docExperience").value.trim(),
+        password: document.getElementById("docPassword").value
+    };
+
+    // Save temporarily in sessionStorage for OTP and Certificate step
+    sessionStorage.setItem("medilingo_pending_doc", JSON.stringify(docData));
+    window.location.href = "doctor-otp.html";
+}
+</script>
+
+</body>
+</html>

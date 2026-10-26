@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Login - Medi Lingo Healthcare</title>
+    <meta name="description" content="Physician and medical practitioner portal login for Medi Lingo Telemedicine and AI Assistance.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="auth-page-wrapper">
+    <div class="auth-theme-toggle">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+            <span class="theme-toggle-icon">🌙</span>
+            <span class="theme-toggle-text">Dark</span>
+        </button>
+    </div>
+
+    <div class="auth-card">
+        
+        <div class="auth-header">
+            <div class="logo-icon" style="background: linear-gradient(135deg, #0ea5e9, #10b981);">👨‍⚕️</div>
+            <h2>Doctor Portal Login</h2>
+            <p>Access Patient Requests & Telemedicine Consultations</p>
+        </div>
+
+        <div class="auth-tabs">
+            <div class="auth-tab active" id="tabDocPassword" onclick="switchDocLoginMode('password')">Password</div>
+            <div class="auth-tab" id="tabDocOtp" onclick="switchDocLoginMode('otp')">Login with OTP</div>
+        </div>
+
+        <!-- Pre-filled demo doctor credentials hint -->
+        <div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.25); border-radius:var(--radius-md); padding:10px 14px; margin-bottom:20px; font-size:12px; color:var(--teal);">
+            💡 <strong>Verified Doctor Demo:</strong><br>
+            Email: <code>dr.arvind@medilingo.com</code> • Pass: <code>Doctor@123</code>
+        </div>
+
+        <form id="doctorLoginForm" onsubmit="handleDoctorLogin(event)">
+            
+            <div class="form-group">
+                <label class="form-label">Official Email, Phone, or Reg Number</label>
+                <div class="input-icon-wrapper">
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="docLoginIdentifier" class="form-control" placeholder="e.g. dr.arvind@medilingo.com or TNMC-84920" value="dr.arvind@medilingo.com" required>
+                </div>
+            </div>
+
+            <div class="form-group" id="docPasswordGroup">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <label class="form-label" style="margin:0;">Password</label>
+                    <a href="#" style="font-size:12px;" onclick="alert('Reset password link sent to official doctor email.')">Forgot?</a>
+                </div>
+                <div class="input-icon-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="docLoginPassword" class="form-control" placeholder="Enter password" value="Doctor@123">
+                </div>
+            </div>
+
+            <div class="form-group" id="docOtpGroup" style="display:none;">
+                <label class="form-label">Enter 6-Digit OTP</label>
+                <div class="input-icon-wrapper">
+                    <span class="input-icon">🔑</span>
+                    <input type="text" id="docLoginOtp" class="form-control" placeholder="123456" maxlength="6">
+                </div>
+                <small style="color:var(--teal); font-size:11.5px; display:block; margin-top:6px;">Use test OTP: 123456</small>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; font-size:13px; color:var(--text-muted);">
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                    <input type="checkbox" checked> Remember Me
+                </label>
+                <span style="font-size:12px; color:var(--teal);">Verified Portal</span>
+            </div>
+
+            <button type="submit" id="docLoginBtn" class="btn btn-primary btn-block">
+                Sign In as Doctor →
+            </button>
+        </form>
+
+        <div style="text-align:center; margin-top:24px; font-size:13.5px; color:var(--text-muted);">
+            New doctor? 
+            <a href="doctor-register.html" style="font-weight:600;">Register with Certificate</a>
+        </div>
+
+        <div style="text-align:center; margin-top:16px; border-top:1px solid var(--border-color); padding-top:16px; font-size:12px; color:var(--text-sub);">
+            <a href="index.html">← Patient Portal</a> • <a href="admin-login.html">Admin Portal →</a>
+        </div>
+
+    </div>
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script>
+let isDocOtpMode = false;
+
+function switchDocLoginMode(mode) {
+    isDocOtpMode = (mode === 'otp');
+    document.getElementById('tabDocPassword').classList.toggle('active', !isDocOtpMode);
+    document.getElementById('tabDocOtp').classList.toggle('active', isDocOtpMode);
+    document.getElementById('docPasswordGroup').style.display = isDocOtpMode ? 'none' : 'block';
+    document.getElementById('docOtpGroup').style.display = isDocOtpMode ? 'block' : 'none';
+}
+
+async function handleDoctorLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById("docLoginBtn");
+    const email = document.getElementById("docLoginIdentifier").value.trim();
+    const password = document.getElementById("docLoginPassword").value;
+    const otp = document.getElementById("docLoginOtp").value.trim();
+
+    btn.disabled = true;
+    btn.innerText = "Verifying Doctor Credentials...";
+
+    try {
+        const res = await fetch(`${API_BASE}/api/doctor/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                email,
+                password,
+                isOtp: isDocOtpMode,
+                otp
+            })
+        });
+
+        const data = await res.json();
+        
+        if (res.status === 403 && data.status === "Pending") {
+            Auth.setSession("doctor", data.doctor);
+            alert("⚠️ " + data.message);
+            window.location.href = "doctor-certificate.html";
+            return;
+        }
+
+        if (res.status === 403 && data.status === "Rejected") {
+            alert("❌ " + data.message);
+            btn.disabled = false;
+            btn.innerText = "Sign In as Doctor →";
+            return;
+        }
+
+        if (data.success && data.doctor) {
+            Auth.setSession("doctor", data.doctor);
+            Auth.showToast(`Welcome back, ${data.doctor.name}!`, "success");
+            setTimeout(() => {
+                window.location.href = "doctor-dashboard.html";
+            }, 800);
+        } else {
+            alert(data.message || "Invalid doctor login credentials.");
+            btn.disabled = false;
+            btn.innerText = "Sign In as Doctor →";
+        }
+    } catch (err) {
+        console.error("Doctor login error:", err);
+        alert("Server connection failed. Make sure backend is running.");
+        btn.disabled = false;
+        btn.innerText = "Sign In as Doctor →";
+    }
+}
+</script>
+
+</body>
+</html>

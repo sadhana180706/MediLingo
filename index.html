@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard - Medi Lingo Healthcare</title>
+    <meta name="description"
+        content="Medi Lingo Multilingual AI-Powered Healthcare Assistant - Voice Consultation, Verified Doctors & Smart Vending">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+
+<body>
+
+    <div class="layout">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <a href="index.html" class="brand">
+                <div class="brand-icon">🩺</div>
+                <span class="brand-text">Medi Lingo</span>
+                <span class="brand-badge">AI</span>
+            </a>
+
+            <div class="sidebar-nav">
+                <span class="nav-label">Patient Navigation</span>
+                <a href="index.html" class="nav-item active">
+                    <span class="icon">🏠</span> Dashboard
+                </a>
+                <a href="consult.html" class="nav-item">
+                    <span class="icon">🎙️</span> Start Consultation
+                </a>
+                <a href="medicine-reference.html" class="nav-item">
+                    <span class="icon">📚</span> Medicine Reference
+                </a>
+                <a href="medicines.html" class="nav-item">
+                    <span class="icon">💊</span> Medicines Available
+                </a>
+                <a href="doctors.html" class="nav-item">
+                    <span class="icon">👨‍⚕️</span> Available Doctors
+                </a>
+                <a href="patient-profile.html" class="nav-item">
+                    <span class="icon">📋</span> My Prescriptions
+                </a>
+
+                <button class="nav-item emergency" onclick="PatientController.triggerEmergency()">
+                    <span class="icon">🚨</span> Emergency SOS
+                </button>
+            </div>
+
+            <!-- Sidebar User Footer -->
+            <div class="sidebar-user">
+                <div class="user-avatar" id="headerPatientAvatar">P</div>
+                <div class="user-details">
+                    <div class="user-name" id="headerPatientName">Guest Patient</div>
+                    <div class="user-role">Patient Portal</div>
+                </div>
+                <button id="headerLogoutBtn"
+                    style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;"
+                    title="Logout" onclick="Auth.logout('patient', 'patient-login.html')">🚪</button>
+                <a id="headerLoginBtn" href="patient-login.html" class="btn btn-primary btn-sm"
+                    style="display:none; padding:4px 8px; font-size:11px;">Sign In</a>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+
+            <!-- TOP BAR -->
+            <header class="top-bar">
+                <div class="top-bar-title">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <button class="mobile-menu-btn" onclick="toggleSidebar()"
+                            aria-label="Toggle navigation">☰</button>
+                        <h1>Welcome to Medi Lingo 👋</h1>
+                    </div>
+                    <p>Healthcare without language barriers • AI Clinical Triage & Smart Care</p>
+                </div>
+
+                <div class="top-bar-actions">
+                    <div class="search-box">
+                        <input type="text" placeholder="🔍 Search medicines, symptoms..."
+                            onkeydown="if(event.key==='Enter') window.location.href='medicine-reference.html'">
+                        <span class="search-icon"> </span>
+                    </div>
+                    <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme"
+                        aria-label="Toggle Theme">
+                        <span class="theme-toggle-icon">🌙</span>
+                        <span class="theme-toggle-text">Dark</span>
+                    </button>
+                    <a href="patient-profile.html" class="btn btn-secondary btn-sm">👤 My Profile</a>
+                </div>
+            </header>
+
+            <!-- HERO / MAIN CONSULTATION CARD -->
+            <section class="hero-card">
+                <h2>Consult a doctor from anywhere</h2>
+                <p>Describe your symptoms in your native language via voice or text. Get instant AI-assisted clinical
+                    guidance, dosage recommendations, and verified doctor teleconsultation.</p>
+
+                <div class="hero-badges">
+                    <span class="pill-badge teal">🎙️ Voice-Enabled Speech Recognition</span>
+                    <span class="pill-badge">🇮🇳 6 Indian Languages Supported</span>
+                    <span class="pill-badge">⚡ Instant AI Triage</span>
+                    <span class="pill-badge">🤖 IoT Smart Vending Ready</span>
+                </div>
+
+                <div style="display:flex; gap:14px; flex-wrap:wrap;">
+                    <a href="consult.html" class="btn btn-primary" style="font-size:15px; padding:14px 28px;">
+                        🎙️ Start Consultation Now →
+                    </a>
+                    <a href="medicine-reference.html" class="btn btn-secondary" style="font-size:15px; padding:14px 24px;">
+                        📚 Medicine Reference (50 Essential Meds)
+                    </a>
+                    <a href="medicines.html" class="btn btn-secondary" style="font-size:15px; padding:14px 24px;">
+                        💊 Check Vending Stock
+                    </a>
+                </div>
+            </section>
+
+            <!-- QUICK CARDS -->
+            <section class="cards-grid">
+
+                <!-- Card 0: Medicine Reference Dataset -->
+                <div class="card">
+                    <div class="card-icon-badge" style="background:rgba(59, 130, 246, 0.15); color:#60A5FA;">📚</div>
+                    <h3>Medicine Reference</h3>
+                    <p>Search 50 essential medicines by problem, symptom, or medication name referencing WHO EML 2025.</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                        <span class="status-badge available">50 WHO Records</span>
+                        <span style="font-size:12px; color:var(--text-muted);">Clinical Directory</span>
+                    </div>
+                    <a href="medicine-reference.html" class="btn btn-secondary btn-block">Explore Medicine Dataset →</a>
+                </div>
+
+                <!-- Card 1: Medicines Available -->
+                <div class="card">
+                    <div class="card-icon-badge">💊</div>
+                    <h3>Medicines Available</h3>
+                    <p>Browse our live on-site smart medicine vending inventory and dispense prescribed OTC medications
+                        instantly.</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                        <span class="status-badge available" id="statMedicinesCount">8 Items In Stock</span>
+                        <span style="font-size:12px; color:var(--text-muted);">IoT Automated</span>
+                    </div>
+                    <a href="medicines.html" class="btn btn-secondary btn-block">View Vending Stock →</a>
+                </div>
+
+                <!-- Card 2: Available Doctors -->
+                <div class="card">
+                    <div class="card-icon-badge blue">👨‍⚕️</div>
+                    <h3>Available Doctors</h3>
+                    <p>Connect with state-board certified, verified medical specialists for personalized telemedicine
+                        consultations.</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                        <span class="status-badge approved" id="statDoctorsCount">4 Verified Doctors</span>
+                        <span style="font-size:12px; color:var(--text-muted);">Teleconsultation</span>
+                    </div>
+                    <a href="doctors.html" class="btn btn-secondary btn-block">Find a Doctor →</a>
+                </div>
+
+                <!-- Card 3: My Digital Prescriptions -->
+                <div class="card">
+                    <div class="card-icon-badge green">📋</div>
+                    <h3>My Prescriptions</h3>
+                    <p>Access your private clinical consultations, dosage schedules, QR codes, and WhatsApp shareable
+                        digital prescriptions.</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                        <span class="status-badge approved" id="statPrescriptionsCount">Private & Secure</span>
+                        <span style="font-size:12px; color:var(--text-muted);">Self Records Only</span>
+                    </div>
+                    <a href="patient-profile.html" class="btn btn-secondary btn-block">View My Records →</a>
+                </div>
+
+            </section>
+
+            <!-- MULTILINGUAL HEALTHCARE FEATURE HIGHLIGHT -->
+            <section class="feature-highlight-card">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;">
+                    <div>
+                        <h3 style="font-size:19px; color:var(--text-main); margin-bottom:6px;">Speak In Your Native
+                            Tongue</h3>
+                        <p style="margin:0; max-width:600px; color:var(--text-muted);">Medi Lingo natively understands
+                            symptom descriptions in <strong>Tamil (தமிழ்), Hindi (हिन्दी), Telugu (తెలుగు), Malayalam
+                                (മലയാളം), Kannada (ಕನ್ನಡ)</strong> and <strong>English</strong>.</p>
+                    </div>
+                    <a href="consult.html" class="btn btn-blue">
+                        Try Multilingual Voice Input 🎤
+                    </a>
+                </div>
+            </section>
+
+        </main>
+
+    </div>
+
+    <!-- EMERGENCY SOS MODAL -->
+    <div id="emergencyModal" class="dispense-modal-overlay">
+        <div class="dispense-modal" style="border-color:var(--emergency); max-width:500px;">
+            <div style="font-size:50px; margin-bottom:12px; animation: pulseMic 1s infinite;">🚨</div>
+            <h2 style="color:var(--emergency); margin-bottom:8px;">EMERGENCY MEDICAL ASSISTANCE</h2>
+            <p style="font-size:13.5px; color:var(--text-main); margin-bottom:20px;">
+                If you or someone around you is experiencing severe chest pain, extreme breathing difficulty, heavy
+                trauma, or unconsciousness:
+            </p>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+                <a href="tel:108" class="btn btn-danger" style="font-size:16px;">
+                    📞 Call 108 (Ambulance)
+                </a>
+                <a href="tel:112" class="btn btn-secondary" style="font-size:16px;">
+                    📞 Call 112 (National Emergency)
+                </a>
+            </div>
+
+            <div
+                style="background:var(--bg-input); padding:12px; border-radius:var(--radius-md); font-size:12px; color:var(--text-muted); margin-bottom:20px; text-align:left; border:1px solid var(--border-color);">
+                📍 Nearest Emergency Hospital: <strong>Medi Lingo Central Trauma Care Unit (2.4 km)</strong><br>
+                🚨 Emergency GPS broadcast dispatched.
+            </div>
+
+            <button class="btn btn-secondary btn-block" onclick="PatientController.closeEmergency()">Close Emergency
+                Screen</button>
+        </div>
+    </div>
+
+    <div id="toastNotification"></div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/patient.js"></script>
+
+</body>
+
+</html>

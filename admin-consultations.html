@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Consultation Records - Medi Lingo Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="admin.html" class="brand">
+            <div class="brand-icon" style="background: linear-gradient(135deg, #3b82f6, #6366f1);">🛡️</div>
+            <span class="brand-text">Medi Lingo</span>
+            <span class="brand-badge" style="background:rgba(59,130,246,0.2); color:#60a5fa;">Admin</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <span class="nav-label">Platform Control</span>
+            <a href="admin.html" class="nav-item">
+                <span class="icon">📊</span> Overview & KPIs
+            </a>
+            <a href="doctor-approval.html" class="nav-item">
+                <span class="icon">📜</span> Doctor Verification
+            </a>
+            <a href="admin-consultations.html" class="nav-item active">
+                <span class="icon">📋</span> All Consultations
+            </a>
+            <a href="medicines.html" class="nav-item">
+                <span class="icon">💊</span> Vending Inventory
+            </a>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" style="border-color:#6366f1; background:#1e1b4b;">A</div>
+            <div class="user-details">
+                <div class="user-name" id="adminDisplayName">Super Administrator</div>
+                <div class="user-role" style="color:#818cf8;">Medical Board Admin</div>
+            </div>
+            <button style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('admin', 'admin-login.html')">🚪</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>📋 Master Consultation & Prescription Database</h1>
+                </div>
+                <p>Confidential administrative audit log of all clinical encounters, triage records, and electronic prescriptions</p>
+            </div>
+            <div class="top-bar-actions">
+                <div class="search-box" style="min-width:300px;">
+                    <input type="text" placeholder="Search patient ID, name, symptom, medicine..." oninput="AdminController.filterConsultations(this.value)">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="AdminController.exportCSV()">
+                    📥 Export CSV
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="window.print()">
+                    🖨️ Print
+                </button>
+            </div>
+        </header>
+
+        <!-- MASTER TABLE -->
+        <section class="table-wrapper">
+            <table class="modern-table" style="table-layout: auto;">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Patient ID</th>
+                        <th>Name & Age</th>
+                        <th>Phone & Lang</th>
+                        <th>Symptoms Reported</th>
+                        <th>Prescribed Medicine</th>
+                        <th>Triage Level</th>
+                        <th>Attending Doctor</th>
+                        <th>Last Visited</th>
+                    </tr>
+                </thead>
+                <tbody id="adminConsultationsTableBody">
+                    <tr>
+                        <td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">
+                            Loading consultation database...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const admin = AdminController.guardAdmin();
+    if (admin) {
+        AdminController.init();
+        AdminController.loadAllConsultations();
+    }
+});
+</script>
+
+</body>
+</html>

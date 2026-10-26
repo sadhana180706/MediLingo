@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Medical Prescription - Medi Lingo</title>
+    <meta name="description" content="Official Medi Lingo Digital Clinical Prescription with QR verification and WhatsApp sharing.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar no-print">
+        <a href="index.html" class="brand">
+            <div class="brand-icon">🩺</div>
+            <span class="brand-text">Medi Lingo</span>
+            <span class="brand-badge">AI</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <span class="nav-label">Patient Navigation</span>
+            <a href="index.html" class="nav-item">
+                <span class="icon">🏠</span> Dashboard
+            </a>
+            <a href="consult.html" class="nav-item">
+                <span class="icon">🎙️</span> Start Consultation
+            </a>
+            <a href="medicine-reference.html" class="nav-item">
+                <span class="icon">📚</span> Medicine Reference
+            </a>
+            <a href="medicines.html" class="nav-item">
+                <span class="icon">💊</span> Medicines Available
+            </a>
+            <a href="doctors.html" class="nav-item">
+                <span class="icon">👨‍⚕️</span> Available Doctors
+            </a>
+            <a href="patient-profile.html" class="nav-item">
+                <span class="icon">📋</span> My Prescriptions
+            </a>
+            <button class="nav-item emergency" onclick="PatientController.triggerEmergency()">
+                <span class="icon">🚨</span> Emergency SOS
+            </button>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" id="headerPatientAvatar">P</div>
+            <div class="user-details">
+                <div class="user-name" id="headerPatientName">Guest Patient</div>
+                <div class="user-role">Patient Portal</div>
+            </div>
+            <button id="headerLogoutBtn" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('patient', 'patient-login.html')">🚪</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- TOP BAR (Hidden in print) -->
+        <header class="top-bar no-print">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>📄 Digital Medical Prescription</h1>
+                </div>
+                <p>Official verified electronic prescription issued via Medi Lingo Health Platform</p>
+            </div>
+            <div class="top-bar-actions">
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="window.print()">
+                    🖨️ Print Prescription
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="sendWhatsAppPrescription()">
+                    📲 Send to WhatsApp
+                </button>
+            </div>
+        </header>
+
+        <!-- PRESCRIPTION CONTAINER (High resolution certificate) -->
+        <div class="rx-container" id="prescriptionCard">
+            
+            <!-- Rx Header -->
+            <div class="rx-header">
+                <div>
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+                        <div class="brand-icon" style="width:34px; height:34px; font-size:18px;">🩺</div>
+                        <h2 style="font-size:22px; margin:0; letter-spacing:-0.5px; color:var(--text-main);">MEDI LINGO HEALTHCARE</h2>
+                    </div>
+                    <p style="font-size:12px; color:var(--teal); margin:0;">
+                        Multilingual AI-Assisted Clinical Telemedicine System
+                    </p>
+                    <span style="font-size:11px; color:var(--text-sub);">License: MEDI-TN-2026-AI • Verified Portal</span>
+                </div>
+
+                <div style="text-align:right;">
+                    <div class="status-badge approved" style="margin-bottom:4px;">Official Digital Rx</div>
+                    <div style="font-size:12px; color:var(--text-muted);" id="rxDate">Date: 14 Aug 2026</div>
+                    <div style="font-size:11px; color:var(--text-sub);" id="rxId">Rx #: ML-RX-849201</div>
+                </div>
+            </div>
+
+            <!-- Patient & Clinical Metadata Grid -->
+            <div class="rx-meta-grid">
+                <div class="rx-meta-item">
+                    <span>Patient Name</span>
+                    <strong id="rxPatientName" style="font-size:15px; color:var(--text-main);">Anand Kumar</strong>
+                </div>
+                <div class="rx-meta-item">
+                    <span>Age & Gender</span>
+                    <strong id="rxPatientAgeGender" style="font-size:15px; color:var(--text-main);">28 yrs • Male</strong>
+                </div>
+                <div class="rx-meta-item">
+                    <span>Mobile Contact</span>
+                    <strong id="rxPatientPhone" style="color:var(--text-main);">+91 9840112233</strong>
+                </div>
+                <div class="rx-meta-item">
+                    <span>Attending Prescriber</span>
+                    <strong id="rxDoctorName" style="color:var(--teal);">Medi Lingo Clinical AI Engine / Dr. Verified</strong>
+                </div>
+            </div>
+
+            <!-- Chief Symptoms Reported -->
+            <div style="margin-bottom:24px;">
+                <span class="form-label" style="font-size:12px; text-transform:uppercase; color:var(--text-sub);">Chief Complaint / Reported Symptoms:</span>
+                <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:12px 16px; border-radius:var(--radius-md); font-size:14px; color:var(--text-main);" id="rxSymptoms">
+                    Fever and headache for two days, mild throat irritation.
+                </div>
+            </div>
+
+            <!-- Prescribed Medication (Rx Section) -->
+            <div class="rx-med-card">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                    <div>
+                        <span style="font-size:12px; color:var(--text-sub); text-transform:uppercase; font-weight:700;">Rx (Prescribed Medication):</span>
+                        <div class="rx-med-title" id="rxMedicineName">Paracetamol 500mg</div>
+                    </div>
+                    <span class="status-badge available" style="font-size:11px;">Oral Administration</span>
+                </div>
+
+                <div style="font-size:14px; margin-bottom:10px; color:var(--text-main);" id="rxDosage">
+                    <strong>Dosage & Frequency:</strong> 1 tablet every 6-8 hours after food
+                </div>
+
+                <div style="font-size:13px; color:var(--text-muted); line-height:1.5;" id="rxInstructions">
+                    <strong>Special Clinical Instructions:</strong> Drink plenty of warm water, take adequate bed rest, and monitor body temperature.
+                </div>
+            </div>
+
+            <!-- Smart Vending Kiosk Note -->
+            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-input); border:1px solid var(--border-color); padding:12px 16px; border-radius:var(--radius-md); margin-bottom:24px; font-size:12.5px;">
+                <div style="display:flex; align-items:center; gap:8px; color:var(--text-main);">
+                    <span>💊</span>
+                    <span>Available for instant contactless pickup at <strong>Medi Lingo Smart Vending Kiosk</strong></span>
+                </div>
+                <a href="medicines.html" class="btn btn-secondary btn-sm no-print" style="padding:4px 10px; font-size:11.5px;">Dispense Now →</a>
+            </div>
+
+            <!-- Prescription Footer & Verification -->
+            <div class="rx-footer">
+                <div>
+                    <div><strong style="color:var(--text-main);">Medi Lingo Healthcare Systems</strong></div>
+                    <div>Computer Generated Electronic Prescription • No Physical Signature Required</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--teal);">SECURITY HASH: 84B9-EF21-09CA</div>
+                    <div style="font-size:11px; color:var(--text-sub);">Issued under Telemedicine Practice Guidelines</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ACTION BUTTONS BOTTOM (Hidden in print) -->
+        <div style="max-width:760px; margin:24px auto 0; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;" class="no-print">
+            <a href="index.html" class="btn btn-secondary">
+                🏠 Back to Dashboard
+            </a>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-secondary" onclick="window.print()">
+                    🖨️ Print / Save as PDF
+                </button>
+                <button class="btn btn-primary" onclick="sendWhatsAppPrescription()">
+                    📲 Share on WhatsApp
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/patient.js"></script>
+<script>
+let currentRxData = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadPrescriptionData();
+});
+
+function loadPrescriptionData() {
+    const rxStr = localStorage.getItem("medilingo_last_rx");
+    if (rxStr) {
+        try {
+            currentRxData = JSON.parse(rxStr);
+            renderRx(currentRxData);
+            return;
+        } catch (e) {
+            console.error("Rx parse error:", e);
+        }
+    }
+
+    // Fallback sample data if opened directly
+    const patient = Auth.getSession("patient");
+    currentRxData = {
+        patient_id: patient ? (patient.patient_uid || "PAT-849201") : "PAT-DEMO",
+        patientName: patient ? patient.name : "Anand Kumar",
+        patientAge: patient ? patient.age : 28,
+        patientGender: patient ? patient.gender : "Male",
+        patientPhone: patient ? patient.phone : "9840112233",
+        symptoms: localStorage.getItem("symptoms") || "Fever, cold and mild headache for two days",
+        medicine: "Paracetamol 500mg",
+        dosage: "1 tablet every 6-8 hours after food",
+        instructions: "Drink plenty of warm water, take rest, and monitor body temperature.",
+        date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    };
+    renderRx(currentRxData);
+}
+
+function renderRx(data) {
+    document.getElementById("rxPatientName").innerText = data.patientName || data.name || "Patient";
+    document.getElementById("rxPatientAgeGender").innerText = `${data.patientAge || data.age || '25'} yrs • ${data.patientGender || data.gender || 'Male'}`;
+    document.getElementById("rxPatientPhone").innerText = data.patientPhone || data.phn_num || "+91 9840112233";
+    document.getElementById("rxSymptoms").innerText = data.symptoms || data.symptom || "General viral symptoms";
+    document.getElementById("rxMedicineName").innerText = data.medicine || data.medication_suggested || "Paracetamol 500mg";
+    document.getElementById("rxDosage").innerHTML = `<strong>Dosage & Frequency:</strong> ${data.dosage || '1 tablet twice daily after food'}`;
+    document.getElementById("rxInstructions").innerHTML = `<strong>Special Clinical Instructions:</strong> ${data.instructions || 'Maintain adequate hydration and rest.'}`;
+    document.getElementById("rxDate").innerText = `Date: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    document.getElementById("rxId").innerText = `Rx #: ML-RX-${Math.floor(100000 + Math.random() * 900000)}`;
+}
+
+function sendWhatsAppPrescription() {
+    if (!currentRxData) return;
+    const phone = currentRxData.patientPhone || currentRxData.phn_num || "9840112233";
+    const cleanPhone = phone.replace(/[^0-9]/g, "").slice(-10);
+
+    const message = 
+`🩺 *MEDI LINGO DIGITAL PRESCRIPTION*
+━━━━━━━━━━━━━━━━━━━━
+👤 *Patient:* ${currentRxData.patientName || currentRxData.name}
+🎂 *Age/Gender:* ${currentRxData.patientAge || currentRxData.age} yrs • ${currentRxData.patientGender || currentRxData.gender}
+📅 *Date:* ${new Date().toLocaleDateString()}
+
+🔍 *Symptoms:* ${currentRxData.symptoms || currentRxData.symptom}
+
+💊 *Prescribed Medicine:* ${currentRxData.medicine || currentRxData.medication_suggested}
+⏰ *Dosage:* ${currentRxData.dosage}
+📝 *Instructions:* ${currentRxData.instructions}
+━━━━━━━━━━━━━━━━━━━━
+✅ *Dispense at Medi Lingo Smart Vending Kiosk*
+_Computer Generated Electronic Telemedicine Prescription_`;
+
+    const url = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+}
+</script>
+
+</body>
+</html>

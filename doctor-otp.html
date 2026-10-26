@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Mobile Verification - Medi Lingo</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="auth-page-wrapper">
+    <div class="auth-theme-toggle">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+            <span class="theme-toggle-icon">🌙</span>
+            <span class="theme-toggle-text">Dark</span>
+        </button>
+    </div>
+
+    <div class="auth-card" style="max-width: 440px; text-align:center;">
+        
+        <div class="auth-header">
+            <div class="logo-icon">🔑</div>
+            <h2>Verify Mobile Number</h2>
+            <p>Enter the 6-digit OTP code sent to your mobile</p>
+        </div>
+
+        <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:12px; border-radius:var(--radius-md); font-size:13px; margin-bottom:24px;">
+            Sent to: <strong id="docPhoneDisplay" style="color:var(--text-main);">+91 9840112233</strong>
+        </div>
+
+        <form onsubmit="handleOtpSubmit(event)">
+            <div class="form-group">
+                <input type="text" id="otpCodeInput" class="form-control" placeholder="• • • • • •" maxlength="6" style="text-align:center; font-size:24px; letter-spacing:8px; font-weight:700;" value="123456" required>
+                <small style="color:var(--teal); display:block; margin-top:8px;">Demo OTP automatically filled: 123456</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-bottom:16px;">
+                Verify & Proceed to Certificate Upload →
+            </button>
+        </form>
+
+        <div style="font-size:13px; color:var(--text-muted);">
+            Didn't receive code? <a href="#" onclick="alert('New OTP sent: 123456')">Resend OTP</a>
+        </div>
+
+    </div>
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const docDataStr = sessionStorage.getItem("medilingo_pending_doc");
+    if (!docDataStr) {
+        window.location.href = "doctor-register.html";
+        return;
+    }
+    const doc = JSON.parse(docDataStr);
+    document.getElementById("docPhoneDisplay").innerText = `+91 ${doc.phone}`;
+});
+
+function handleOtpSubmit(e) {
+    e.preventDefault();
+    const otp = document.getElementById("otpCodeInput").value.trim();
+    if (otp.length < 4) {
+        alert("Please enter a valid OTP");
+        return;
+    }
+    Auth.showToast("OTP Verified! Proceeding to certificate upload...", "success");
+    setTimeout(() => {
+        window.location.href = "doctor-certificate.html";
+    }, 600);
+}
+</script>
+
+</body>
+</html>

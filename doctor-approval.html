@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Verification Management - Medi Lingo Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="admin.html" class="brand">
+            <div class="brand-icon" style="background: linear-gradient(135deg, #3b82f6, #6366f1);">🛡️</div>
+            <span class="brand-text">Medi Lingo</span>
+            <span class="brand-badge" style="background:rgba(59,130,246,0.2); color:#60a5fa;">Admin</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <span class="nav-label">Platform Control</span>
+            <a href="admin.html" class="nav-item">
+                <span class="icon">📊</span> Overview & KPIs
+            </a>
+            <a href="doctor-approval.html" class="nav-item active">
+                <span class="icon">📜</span> Doctor Verification
+            </a>
+            <a href="admin-consultations.html" class="nav-item">
+                <span class="icon">📋</span> All Consultations
+            </a>
+            <a href="medicines.html" class="nav-item">
+                <span class="icon">💊</span> Vending Inventory
+            </a>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" style="border-color:#6366f1; background:#1e1b4b;">A</div>
+            <div class="user-details">
+                <div class="user-name" id="adminDisplayName">Super Administrator</div>
+                <div class="user-role" style="color:#818cf8;">Medical Board Admin</div>
+            </div>
+            <button style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('admin', 'admin-login.html')">🚪</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>📜 Doctor License & Certificate Verification</h1>
+                </div>
+                <p>Verify medical credentials against state registries before approving telemedicine privileges</p>
+            </div>
+            <div class="top-bar-actions">
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="AdminController.loadPendingDoctors()">
+                    🔄 Refresh List
+                </button>
+            </div>
+        </header>
+
+        <!-- DOCTORS VERIFICATION TABLE -->
+        <section class="table-wrapper">
+            <div class="table-header">
+                <div>
+                    <h3>Registered Medical Practitioners</h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0;">Approve or reject doctor license applications in real time</p>
+                </div>
+            </div>
+
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Doctor Name</th>
+                        <th>Reg Number</th>
+                        <th>Contact</th>
+                        <th>Qualification</th>
+                        <th>Certificate File</th>
+                        <th>Status</th>
+                        <th>Verification Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="doctorApprovalTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">
+                            Loading doctor verification queue...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const admin = AdminController.guardAdmin();
+    if (admin) {
+        AdminController.init();
+        AdminController.loadPendingDoctors();
+    }
+});
+</script>
+
+</body>
+</html>

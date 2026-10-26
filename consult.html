@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Medical Consultation - Medi Lingo</title>
+    <meta name="description" content="Multilingual AI-assisted clinical consultation with speech-to-text and instant prescription guidance.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="index.html" class="brand">
+            <div class="brand-icon">🩺</div>
+            <span class="brand-text">Medi Lingo</span>
+            <span class="brand-badge">AI</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <span class="nav-label">Patient Navigation</span>
+            <a href="index.html" class="nav-item">
+                <span class="icon">🏠</span> Dashboard
+            </a>
+            <a href="consult.html" class="nav-item active">
+                <span class="icon">🎙️</span> Start Consultation
+            </a>
+            <a href="medicine-reference.html" class="nav-item">
+                <span class="icon">📚</span> Medicine Reference
+            </a>
+            <a href="medicines.html" class="nav-item">
+                <span class="icon">💊</span> Medicines Available
+            </a>
+            <a href="doctors.html" class="nav-item">
+                <span class="icon">👨‍⚕️</span> Available Doctors
+            </a>
+            <a href="patient-profile.html" class="nav-item">
+                <span class="icon">📋</span> My Prescriptions
+            </a>
+            <button class="nav-item emergency" onclick="PatientController.triggerEmergency()">
+                <span class="icon">🚨</span> Emergency SOS
+            </button>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" id="headerPatientAvatar">P</div>
+            <div class="user-details">
+                <div class="user-name" id="headerPatientName">Guest Patient</div>
+                <div class="user-role">Patient Portal</div>
+            </div>
+            <button id="headerLogoutBtn" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('patient', 'patient-login.html')">🚪</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>🎙️ Multilingual AI Consultation</h1>
+                </div>
+                <p>Speak or write your symptoms in your native tongue for real-time triage & medication suggestions.</p>
+            </div>
+            <div class="top-bar-actions">
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+                <a href="index.html" class="btn btn-secondary btn-sm">← Back to Dashboard</a>
+            </div>
+        </header>
+
+        <!-- STEP 1: LANGUAGE SELECTION -->
+        <section class="card" style="margin-bottom:24px;">
+            <h3 style="font-size:16px; margin-bottom:12px;">🌐 Step 1: Select Your Preferred Language</h3>
+            <div class="lang-grid" id="languageSelectorGrid">
+                <!-- Populated via JS -->
+            </div>
+        </section>
+
+        <!-- STEP 2: VOICE OR TEXT INPUT PANEL -->
+        <section class="voice-assistant-panel">
+            
+            <h2 id="langHeroTitle" style="font-size:22px; margin-bottom:6px; color:var(--text-main);">Speak Your Symptoms</h2>
+            <p id="langHeroSub" style="font-size:13.5px; color:var(--text-muted); margin-bottom:24px;">
+                Press the microphone button below and describe how you feel in your chosen language.
+            </p>
+
+            <!-- Mic Visualizer Button -->
+            <div class="voice-mic-container">
+                <button type="button" id="voiceMicBtn" class="voice-mic-btn" onclick="toggleVoiceRecording()" title="Click to Speak">
+                    🎤
+                </button>
+                <div class="mic-wave-ring"></div>
+            </div>
+
+            <div id="voiceStatusMsg" style="font-size:13.5px; font-weight:600; color:var(--teal); margin-bottom:20px;">
+                Click microphone to speak
+            </div>
+
+            <!-- Quick Demo Prompts -->
+            <div style="margin-bottom:20px; display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
+                <span style="font-size:12px; color:var(--text-sub); align-self:center;">Try sample:</span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="useSamplePrompt(0)" style="font-size:12px;">🇬🇧 Fever & Headache</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="useSamplePrompt(1)" style="font-size:12px;">🇮🇳 காய்ச்சல் (Tamil)</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="useSamplePrompt(2)" style="font-size:12px;">🇮🇳 बुखार (Hindi)</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="useSamplePrompt('emergency')" style="font-size:12px; border-color:var(--emergency); color:var(--emergency);">🚨 Chest Pain (Emergency)</button>
+            </div>
+
+            <!-- Symptom Textarea -->
+            <div class="form-group" style="max-width:700px; margin:0 auto 20px;">
+                <textarea id="symptomTextInput" class="form-control" placeholder="Describe your symptoms here (e.g. I have fever, cold, and body pain for two days)..." rows="3" style="font-size:15px; padding:16px;"></textarea>
+            </div>
+
+            <!-- Patient Info Form -->
+            <div class="card" style="max-width:700px; margin:0 auto 24px; text-align:left; background:var(--bg-input);">
+                <h4 style="font-size:14px; margin-bottom:14px; color:var(--teal);">👤 Patient Details (For Prescription)</h4>
+                
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px;">
+                    <div>
+                        <label class="form-label" style="font-size:12px;">Patient Name *</label>
+                        <input type="text" id="patientNameInput" class="form-control" placeholder="Full name" required>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:12px;">Age *</label>
+                        <input type="number" id="patientAgeInput" class="form-control" placeholder="e.g. 26" required min="1" max="120">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:12px;">Gender</label>
+                        <select id="patientGenderInput" class="form-control">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:12px;">Phone Number *</label>
+                        <input type="tel" id="patientPhoneInput" class="form-control" placeholder="10-digit mobile" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit CTA -->
+            <button type="button" id="analyzeSubmitBtn" class="btn btn-primary" style="padding:14px 36px; font-size:16px;" onclick="runAIClinicalAnalysis()">
+                ⚡ Analyze Symptoms & Generate Prescription →
+            </button>
+
+        </section>
+
+        <!-- AI CLINICAL RESULT SECTION (Hidden Initially) -->
+        <section id="aiResultCard" class="card" style="display:none; max-width:800px; margin:0 auto 30px; border-color:var(--teal); box-shadow:var(--shadow-glow);">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:16px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <h3 style="font-size:20px; color:var(--teal); margin:0;" id="resultHeaderTitle">🤖 AI Clinical Analysis Result</h3>
+                    <span style="font-size:12px; color:var(--text-muted);" id="resultTimestamp">Generated just now</span>
+                </div>
+                <div id="triageBadgeContainer">
+                    <!-- Triage badge inserted here -->
+                </div>
+            </div>
+
+            <!-- Detected Symptoms -->
+            <div style="margin-bottom:20px;">
+                <span class="form-label" style="font-size:12px; text-transform:uppercase; color:var(--text-sub);">Detected Symptoms:</span>
+                <div id="detectedSymptomsList" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+                    <!-- Badge pills -->
+                </div>
+            </div>
+
+            <!-- Suggested Medication Box -->
+            <div class="rx-med-card" id="medicationResultBox">
+                <div class="rx-med-title" id="resMedicineName">Paracetamol 500mg</div>
+                <div style="font-size:14px; margin-bottom:8px;" id="resDosage"><strong>Dosage:</strong> 1 tablet every 6-8 hours after food</div>
+                <div style="font-size:13px; color:var(--text-muted);" id="resInstructions"><strong>Clinical Notes:</strong> Drink plenty of fluids and rest.</div>
+            </div>
+
+            <!-- Doctor Referral Box (Shown if requiresDoctor is true) -->
+            <div id="doctorReferralBox" style="display:none; background:var(--emergency-bg); border:1px solid rgba(239,68,68,0.3); border-radius:var(--radius-md); padding:16px; margin-bottom:20px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="font-size:30px;">👨‍⚕️</div>
+                    <div style="flex-grow:1;">
+                        <h4 style="color:var(--emergency); font-size:15px; margin-bottom:2px;">Specialist Consultation Recommended</h4>
+                        <p style="font-size:12.5px; color:var(--text-muted); margin:0;">
+                            Based on symptom severity, clinical review by an approved doctor is strongly advised.
+                        </p>
+                    </div>
+                    <a href="doctors.html" class="btn btn-danger btn-sm">Consult Doctor Now →</a>
+                </div>
+            </div>
+
+            <!-- Disclaimer Notice -->
+            <div style="background:var(--bg-input); padding:12px 16px; border-radius:var(--radius-md); font-size:12px; color:var(--text-muted); margin-bottom:24px; border-left:3px solid var(--warning); border:1px solid var(--border-color); border-left-width:3px;">
+                ⚠️ <strong>Medical Disclaimer:</strong> This AI recommendation is an assistive triage tool and is not a replacement for comprehensive in-person medical evaluation by a licensed physician.
+            </div>
+
+            <!-- Actions: Go to Digital Prescription / Vending Machine -->
+            <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                <a href="medicines.html" class="btn btn-secondary">
+                    💊 Check Vending Machine Stock
+                </a>
+                <button class="btn btn-primary" onclick="proceedToPrescriptionPage()">
+                    📄 View & Print Digital Prescription (WhatsApp) →
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/patient.js"></script>
+<script src="js/multilingual.js"></script>
+<script>
+let speechHandler = null;
+let currentLanguage = "en-IN";
+let latestConsultationResult = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+    speechHandler = new MediLingoSpeech();
+    renderLanguageButtons();
+    autoPopulatePatientDetails();
+});
+
+function renderLanguageButtons() {
+    const grid = document.getElementById("languageSelectorGrid");
+    if (!grid) return;
+
+    let html = "";
+    MULTILINGUAL_DATA.languages.forEach(lang => {
+        const isActive = lang.code === currentLanguage;
+        html += `
+            <div class="lang-btn ${isActive ? 'active' : ''}" onclick="selectLanguage('${lang.code}')">
+                <div>${lang.flag} ${lang.nativeName}</div>
+                <span class="sub-text">${lang.name}</span>
+            </div>
+        `;
+    });
+    grid.innerHTML = html;
+}
+
+function selectLanguage(langCode) {
+    currentLanguage = langCode;
+    speechHandler.setLanguage(langCode);
+    renderLanguageButtons();
+
+    const t = MULTILINGUAL_DATA.translations[langCode] || MULTILINGUAL_DATA.translations["en-IN"];
+    document.getElementById("langHeroTitle").innerText = t.speakNow;
+    document.getElementById("langHeroSub").innerText = t.listening.replace("...", "");
+    document.getElementById("symptomTextInput").setAttribute("placeholder", t.placeholderSymptom);
+    Auth.showToast(`Language switched to ${MULTILINGUAL_DATA.languages.find(l => l.code === langCode).nativeName}`, "success");
+}
+
+function toggleVoiceRecording() {
+    const micBtn = document.getElementById("voiceMicBtn");
+    const statusMsg = document.getElementById("voiceStatusMsg");
+    const t = MULTILINGUAL_DATA.translations[currentLanguage] || MULTILINGUAL_DATA.translations["en-IN"];
+
+    if (speechHandler.isRecording) {
+        speechHandler.stopListening();
+        micBtn.classList.remove("recording");
+        statusMsg.innerText = "Voice recording stopped.";
+    } else {
+        micBtn.classList.add("recording");
+        statusMsg.innerText = t.listening;
+
+        speechHandler.startListening(
+            (transcript) => {
+                const textInput = document.getElementById("symptomTextInput");
+                textInput.value = transcript;
+                statusMsg.innerText = t.speakDone;
+                micBtn.classList.remove("recording");
+            },
+            (state) => {
+                if (state === "idle") {
+                    micBtn.classList.remove("recording");
+                }
+            },
+            (error) => {
+                statusMsg.innerText = error;
+                micBtn.classList.remove("recording");
+            }
+        );
+    }
+}
+
+function useSamplePrompt(type) {
+    const textInput = document.getElementById("symptomTextInput");
+    if (type === 'emergency') {
+        textInput.value = "Severe chest pain radiating to left arm, heavy sweating and shortness of breath.";
+    } else {
+        const langObj = MULTILINGUAL_DATA.languages[type] || MULTILINGUAL_DATA.languages[0];
+        selectLanguage(langObj.code);
+        textInput.value = langObj.sample;
+    }
+}
+
+function autoPopulatePatientDetails() {
+    const patient = Auth.getSession("patient");
+    if (patient) {
+        if (patient.name) document.getElementById("patientNameInput").value = patient.name;
+        if (patient.age) document.getElementById("patientAgeInput").value = patient.age;
+        if (patient.gender) document.getElementById("patientGenderInput").value = patient.gender;
+        if (patient.phone) document.getElementById("patientPhoneInput").value = patient.phone;
+    }
+}
+
+async function runAIClinicalAnalysis() {
+    const symptomText = document.getElementById("symptomTextInput").value.trim();
+    const name = document.getElementById("patientNameInput").value.trim();
+    const age = document.getElementById("patientAgeInput").value.trim();
+    const gender = document.getElementById("patientGenderInput").value;
+    const phone = document.getElementById("patientPhoneInput").value.trim();
+    const btn = document.getElementById("analyzeSubmitBtn");
+
+    if (!symptomText) {
+        alert("Please speak or type your symptoms first.");
+        return;
+    }
+    if (!name || !age || !phone) {
+        alert("Please fill in patient name, age, and phone number.");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "⚡ Processing Multilingual NLP & AI Triage...";
+
+    const patient = Auth.getSession("patient");
+    const patientId = patient ? (patient.patient_uid || patient.id) : ("PAT-" + Date.now().toString().slice(-6));
+
+    try {
+        const res = await fetch(`${API_BASE}/api/ai-prescription`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                patient_id: patientId,
+                name: name,
+                age: age,
+                gender: gender,
+                phn_num: phone,
+                language: MULTILINGUAL_DATA.languages.find(l => l.code === currentLanguage)?.name || "English",
+                symptom: symptomText
+            })
+        });
+
+        const data = await res.json();
+        latestConsultationResult = data;
+        latestConsultationResult.patientName = name;
+        latestConsultationResult.patientAge = age;
+        latestConsultationResult.patientGender = gender;
+        latestConsultationResult.patientPhone = phone;
+
+        // Store in localStorage for the digital prescription page
+        localStorage.setItem("medilingo_last_rx", JSON.stringify(latestConsultationResult));
+
+        renderAIResult(data);
+        btn.disabled = false;
+        btn.innerText = "⚡ Analyze Symptoms & Generate Prescription →";
+    } catch (e) {
+        console.error("AI Analysis error:", e);
+        alert("Error connecting to AI clinical backend.");
+        btn.disabled = false;
+        btn.innerText = "⚡ Analyze Symptoms & Generate Prescription →";
+    }
+}
+
+function renderAIResult(data) {
+    const resultCard = document.getElementById("aiResultCard");
+    resultCard.style.display = "block";
+
+    // Triage badge
+    const isEmergency = data.triageLevel === "Emergency";
+    const triageBadge = document.getElementById("triageBadgeContainer");
+    triageBadge.innerHTML = `
+        <span class="status-badge ${isEmergency ? 'emergency' : (data.triageLevel === 'Moderate' ? 'warning' : 'approved')}" style="font-size:13px; padding:6px 14px;">
+            ${isEmergency ? '🚨 Red Flag Emergency' : (data.triageLevel === 'Moderate' ? '⚠️ Moderate Severity' : '✅ Mild / Common Condition')}
+        </span>
+    `;
+
+    // Detected symptoms
+    const symContainer = document.getElementById("detectedSymptomsList");
+    symContainer.innerHTML = (data.detectedSymptoms || [data.symptoms]).map(s => `
+        <span class="pill-badge teal">🔍 ${s}</span>
+    `).join("");
+
+    // Medication box
+    document.getElementById("resMedicineName").innerText = data.medicine;
+    document.getElementById("resDosage").innerHTML = `<strong>Dosage:</strong> ${data.dosage}`;
+    document.getElementById("resInstructions").innerHTML = `<strong>Clinical Notes:</strong> ${data.instructions || 'Consult healthcare provider if symptoms persist.'}`;
+
+    // Doctor referral alert
+    const doctorRefBox = document.getElementById("doctorReferralBox");
+    if (data.requiresDoctor || isEmergency) {
+        doctorRefBox.style.display = "block";
+    } else {
+        doctorRefBox.style.display = "none";
+    }
+
+    // Scroll to results smoothly
+    resultCard.scrollIntoView({ behavior: 'smooth' });
+}
+
+function proceedToPrescriptionPage() {
+    if (!latestConsultationResult) {
+        alert("Please analyze symptoms first.");
+        return;
+    }
+    window.location.href = "prescription.html";
+}
+</script>
+
+</body>
+</html>

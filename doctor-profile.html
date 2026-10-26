@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Profile & Medical License - Medi Lingo</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="doctor-dashboard.html" class="brand">
+            <div class="brand-icon" style="background: linear-gradient(135deg, #0ea5e9, #10b981);">👨‍⚕️</div>
+            <span class="brand-text">Medi Lingo</span>
+            <span class="brand-badge" style="background:rgba(59,130,246,0.15); color:#60a5fa;">Doctor</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <span class="nav-label">Clinical Workflow</span>
+            <a href="doctor-dashboard.html" class="nav-item">
+                <span class="icon">📊</span> Dashboard & Requests
+            </a>
+            <a href="doctor-history.html" class="nav-item">
+                <span class="icon">📜</span> Consultation History
+            </a>
+            <a href="medicines.html" class="nav-item">
+                <span class="icon">💊</span> Vending Medicines
+            </a>
+            <a href="doctor-profile.html" class="nav-item active">
+                <span class="icon">👤</span> My Profile & License
+            </a>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" style="border-color:#38bdf8;">D</div>
+            <div class="user-details">
+                <div class="user-name doc-name">Dr. Medical Practitioner</div>
+                <div class="user-role doc-spec">General Medicine</div>
+            </div>
+            <button style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('doctor', 'doctor-login.html')">🚪</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <header class="top-bar">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>👤 Doctor Profile & Credentials</h1>
+                </div>
+                <p>Medical registration credentials and telemedicine verification status</p>
+            </div>
+            <div class="top-bar-actions">
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+                <a href="doctor-dashboard.html" class="btn btn-secondary btn-sm">← Back to Dashboard</a>
+            </div>
+        </header>
+
+        <section class="card" style="max-width:800px; margin-bottom:28px;">
+            <div style="display:flex; align-items:center; gap:20px; border-bottom:1px solid var(--border-color); padding-bottom:24px; margin-bottom:24px; flex-wrap:wrap;">
+                <div class="user-avatar" style="width:72px; height:72px; font-size:28px; background:linear-gradient(135deg, #0ea5e9, #10b981); border:3px solid var(--teal);" id="docProfileAvatar">D</div>
+                <div style="flex-grow:1;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <h2 style="font-size:24px; margin:0;" class="doc-name">Dr. Arvind Swaminathan</h2>
+                        <span class="status-badge approved">Verified Physician ✅</span>
+                    </div>
+                    <p style="color:var(--teal); font-size:14px; margin:4px 0 0;" class="doc-spec">General Medicine</p>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:18px; margin-bottom:24px;">
+                <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:14px; border-radius:var(--radius-md);">
+                    <span style="font-size:11px; text-transform:uppercase; color:var(--text-sub); display:block; font-weight:700;">REGISTRATION NUMBER</span>
+                    <strong style="font-size:15px; color:var(--text-main);" class="doc-reg">TNMC-84920</strong>
+                </div>
+
+                <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:14px; border-radius:var(--radius-md);">
+                    <span style="font-size:11px; text-transform:uppercase; color:var(--text-sub); display:block; font-weight:700;">QUALIFICATION</span>
+                    <strong style="font-size:15px; color:var(--text-main);" id="docQualDisplay">MBBS, MD (Internal Med)</strong>
+                </div>
+
+                <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:14px; border-radius:var(--radius-md);">
+                    <span style="font-size:11px; text-transform:uppercase; color:var(--text-sub); display:block; font-weight:700;">CLINICAL EXPERIENCE</span>
+                    <strong style="font-size:15px; color:var(--text-main);" id="docExpDisplay">12 Years</strong>
+                </div>
+
+                <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:14px; border-radius:var(--radius-md);">
+                    <span style="font-size:11px; text-transform:uppercase; color:var(--text-sub); display:block; font-weight:700;">EMAIL & PHONE</span>
+                    <div style="font-size:13px; color:var(--text-main);" id="docContactDisplay">dr.arvind@medilingo.com</div>
+                </div>
+            </div>
+
+            <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:18px; border-radius:var(--radius-lg); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h4 style="font-size:14px; margin-bottom:2px; color:var(--text-main);">📜 Medical Registration Certificate</h4>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0;">Uploaded and verified by Medi Lingo Administrative Medical Board</p>
+                </div>
+                <a id="docCertLink" href="uploads/default_cert.pdf" target="_blank" class="btn btn-secondary btn-sm">
+                    📄 View Certificate PDF
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/doctor.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const doc = DoctorController.guardDashboard();
+    if (doc) {
+        if (doc.qualification) document.getElementById("docQualDisplay").innerText = doc.qualification;
+        if (doc.experience) document.getElementById("docExpDisplay").innerText = doc.experience;
+        if (doc.email) document.getElementById("docContactDisplay").innerText = `${doc.email} • ${doc.phone || ''}`;
+        if (doc.certificate_path) {
+            document.getElementById("docCertLink").setAttribute("href", `${API_BASE}/${doc.certificate_path}`);
+        }
+    }
+});
+</script>
+
+</body>
+</html>

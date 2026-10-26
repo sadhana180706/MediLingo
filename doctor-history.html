@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation History - Medi Lingo Doctor Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="doctor-dashboard.html" class="brand">
+            <div class="brand-icon" style="background: linear-gradient(135deg, #0ea5e9, #10b981);">👨‍⚕️</div>
+            <span class="brand-text">Medi Lingo</span>
+            <span class="brand-badge" style="background:rgba(59,130,246,0.15); color:#60a5fa;">Doctor</span>
+        </a>
+
+        <div class="sidebar-nav">
+            <span class="nav-label">Clinical Workflow</span>
+            <a href="doctor-dashboard.html" class="nav-item">
+                <span class="icon">📊</span> Dashboard & Requests
+            </a>
+            <a href="doctor-history.html" class="nav-item active">
+                <span class="icon">📜</span> Consultation History
+            </a>
+            <a href="medicines.html" class="nav-item">
+                <span class="icon">💊</span> Vending Medicines
+            </a>
+            <a href="doctor-profile.html" class="nav-item">
+                <span class="icon">👤</span> My Profile & License
+            </a>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar" style="border-color:#38bdf8;">D</div>
+            <div class="user-details">
+                <div class="user-name doc-name">Dr. Medical Practitioner</div>
+                <div class="user-role doc-spec">General Medicine</div>
+            </div>
+            <button style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('doctor', 'doctor-login.html')">🚪</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <header class="top-bar">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>📜 Completed Consultations Log</h1>
+                </div>
+                <p>Archive of electronic prescriptions and telemedicine encounters</p>
+            </div>
+            <div class="top-bar-actions">
+                <div class="search-box">
+                    <input type="text" placeholder="Search patient or medicine..." oninput="filterHistory(this.value)">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+            </div>
+        </header>
+
+        <section class="table-wrapper">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Patient Name</th>
+                        <th>Symptoms Reported</th>
+                        <th>Prescribed Medicine</th>
+                        <th>Status</th>
+                        <th>Consultation Date</th>
+                    </tr>
+                </thead>
+                <tbody id="doctorHistoryTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">
+                            Loading consultation history...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/doctor.js"></script>
+<script>
+let fullHistory = [];
+
+document.addEventListener("DOMContentLoaded", async () => {
+    const doc = DoctorController.guardDashboard();
+    if (doc) {
+        try {
+            const res = await fetch(`${API_BASE}/api/doctor/history`);
+            fullHistory = await res.json();
+            DoctorController.loadHistory();
+        } catch (e) {
+            console.error("History fetch error:", e);
+        }
+    }
+});
+
+function filterHistory(query) {
+    const q = (query || "").toLowerCase();
+    const filtered = fullHistory.filter(h => 
+        (h.name && h.name.toLowerCase().includes(q)) ||
+        (h.symptom && h.symptom.toLowerCase().includes(q)) ||
+        (h.medication_suggested && h.medication_suggested.toLowerCase().includes(q))
+    );
+    
+    const tbody = document.getElementById("doctorHistoryTableBody");
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">No records found.</td></tr>`;
+        return;
+    }
+
+    let html = "";
+    filtered.forEach(row => {
+        html += `
+            <tr>
+                <td>#${row.s_no}</td>
+                <td><strong>${row.name || 'Patient'}</strong><br><span style="font-size:11px; color:var(--text-muted);">${row.age || 'N/A'} yrs • ${row.gender || ''}</span></td>
+                <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${row.symptom}</td>
+                <td><strong style="color:var(--teal);">${row.medication_suggested}</strong><br><span style="font-size:11px; color:var(--text-muted);">${row.dosage || ''}</span></td>
+                <td><span class="status-badge approved">Prescribed</span></td>
+                <td>${new Date(row.last_visited).toLocaleDateString()}</td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+</script>
+
+</body>
+</html>
