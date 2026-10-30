@@ -966,7 +966,24 @@ app.get("/api/medicine-reference", (req, res) => {
         const dataPath = path.join(__dirname, "data", "medicines-reference.json");
         if (fs.existsSync(dataPath)) {
             const raw = fs.readFileSync(dataPath, "utf-8");
-            return res.json(JSON.parse(raw));
+            let data = JSON.parse(raw);
+            const { q, category } = req.query;
+            if (category && category !== "All") {
+                data = data.filter(m => m.category === category);
+            }
+            if (q) {
+                const query = q.toLowerCase().trim();
+                data = data.filter(m => 
+                    (m.medicine && m.medicine.toLowerCase().includes(query)) ||
+                    (m.generic_name && m.generic_name.toLowerCase().includes(query)) ||
+                    (m.problem && m.problem.toLowerCase().includes(query)) ||
+                    (m.symptoms && m.symptoms.toLowerCase().includes(query)) ||
+                    (m.indication && m.indication.toLowerCase().includes(query)) ||
+                    (m.strengths_available && m.strengths_available.some(s => s.toLowerCase().includes(query))) ||
+                    (m.common_uses && m.common_uses.some(u => u.toLowerCase().includes(query)))
+                );
+            }
+            return res.json(data);
         }
         res.status(404).json({ error: "Medicine reference data not found" });
     } catch (e) {
