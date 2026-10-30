@@ -52,11 +52,25 @@ const upload = multer({
 /* =========================
    MYSQL POOL CONNECTION
 ========================= */
-const db = mysql.createPool({
+/*const db = mysql.createPool({
     host: "localhost",
     user: "root",
     password: "Sadhu@18",
     database: "medilingo",
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});*/
+const db = mysql.createPool({
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT || 10900),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    ssl: {
+        ca: process.env.DB_CA_CERT,
+        rejectUnauthorized: true
+    },
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
