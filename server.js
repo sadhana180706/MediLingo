@@ -1,1019 +1,429 @@
-const express = require("express");
-const cors = require("cors");
-const mysql = require("mysql2");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Medical Consultation - Medi Lingo</title>
+    <meta name="description" content="Multilingual AI-assisted clinical consultation with speech-to-text and instant prescription guidance.">
+    <link rel="stylesheet" href="style.css">
+    <script src="js/theme.js"></script>
+</head>
+<body>
 
-// Auto-create uploads folder if missing
-const uploadsDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
+<div class="layout">
 
-// Create a dummy certificate if none exists for seeding preview
-const defaultCertPath = path.join(uploadsDir, "default_cert.pdf");
-if (!fs.existsSync(defaultCertPath)) {
-    fs.writeFileSync(defaultCertPath, "%PDF-1.4 Medical Telemedicine Registration Certificate - Medi Lingo Verified");
-}
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="index.html" class="brand">
+            <!--<div class="brand-icon"></div>-->
+            <span class="brand-text">Medi Lingo</span>
+            <!--<span class="brand-badge">AI</span>-->
+        </a>
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+        <div class="sidebar-nav">
+            <span class="nav-label">Patient Navigation</span>
+            <a href="index.html" class="nav-item">
+                <span class="icon"></span> Dashboard
+            </a>
+            <a href="consult.html" class="nav-item active">
+                <span class="icon"></span> Start Consultation
+            </a>
+            <a href="medicine-reference.html" class="nav-item">
+                <span class="icon"></span> Medicine Reference
+            </a>
+            <a href="medicines.html" class="nav-item">
+                <span class="icon"></span> Medicines Available
+            </a>
+            <a href="doctors.html" class="nav-item">
+                <span class="icon"></span> Available Doctors
+            </a>
+            <a href="patient-profile.html" class="nav-item">
+                <span class="icon"></span> My Prescriptions
+            </a>
+            <button class="nav-item emergency" onclick="PatientController.triggerEmergency()">
+                <span class="icon">🚨</span> Emergency SOS
+            </button>
+        </div>
 
-/* =========================
-   MIDDLEWARE
-========================= */
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+        <div class="sidebar-user">
+            <div class="user-avatar" id="headerPatientAvatar">P</div>
+            <div class="user-details">
+                <div class="user-name" id="headerPatientName">Guest Patient</div>
+                <div class="user-role">Patient Portal</div>
+            </div>
+            <button id="headerLogoutBtn" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('patient', 'patient-login.html')">🚪</button>
+        </div>
+    </aside>
 
-// Serve static frontend files and uploads
-app.use(express.static(__dirname));
-app.use("/uploads", express.static(uploadsDir));
+    <!-- MAIN CONTENT -->
+    <main class="main">
 
-/* =========================
-   MULTER CONFIG FOR CERTIFICATES
-========================= */
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, "uploads/");
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        cb(null, "cert-" + uniqueSuffix + path.extname(file.originalname));
-    }
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="top-bar-title">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+                    <h1>🎙️ Multilingual AI Consultation</h1>
+                </div>
+                <p>Speak or write your symptoms in your native tongue for real-time triage & medication suggestions.</p>
+            </div>
+            <div class="top-bar-actions">
+                <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-toggle-text">Dark</span>
+                </button>
+                <a href="index.html" class="btn btn-secondary btn-sm">← Back to Dashboard</a>
+            </div>
+        </header>
+
+        <!-- STEP 1: LANGUAGE SELECTION -->
+        <section class="card" style="margin-bottom:24px;">
+            <h3 style="font-size:16px; margin-bottom:12px;">🌐 Step 1: Select Your Preferred Language</h3>
+            <div class="lang-grid" id="languageSelectorGrid">
+                <!-- Populated via JS -->
+            </div>
+        </section>
+
+        <!-- STEP 2: VOICE OR TEXT INPUT PANEL -->
+        <section class="voice-assistant-panel">
+            
+            <h2 id="langHeroTitle" style="font-size:22px; margin-bottom:6px; color:var(--text-main);">Speak Your Symptoms</h2>
+            <p id="langHeroSub" style="font-size:13.5px; color:var(--text-muted); margin-bottom:24px;">
+                Press the microphone button below and describe how you feel in your chosen language.
+            </p>
+
+            <!-- Mic Visualizer Button -->
+            <div class="voice-mic-container">
+                <button type="button" id="voiceMicBtn" class="voice-mic-btn" onclick="toggleVoiceRecording()" title="Click to Speak">
+                    🎤
+                </button>
+                <div class="mic-wave-ring"></div>
+            </div>
+
+            <div id="voiceStatusMsg" style="font-size:13.5px; font-weight:600; color:var(--teal); margin-bottom:20px;">
+                Click microphone to speak
+            </div>
+
+            <!-- Quick Demo Prompts -->
+            <div style="margin-bottom:20px; display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
+                <span style="font-size:12px; color:var(--text-sub); align-self:center;">Try sample:</span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="useSamplePrompt(0)" style="font-size:12px;">🇬🇧 Fever & Headache</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="useSamplePrompt(1)" style="font-size:12px;">🇮🇳 காய்ச்சல் (Tamil)</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="useSamplePrompt(2)" style="font-size:12px;">🇮🇳 बुखार (Hindi)</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="useSamplePrompt('emergency')" style="font-size:12px; border-color:var(--emergency); color:var(--emergency);">🚨 Chest Pain (Emergency)</button>
+            </div>
+
+            <!-- Symptom Textarea -->
+            <div class="form-group" style="max-width:700px; margin:0 auto 20px;">
+                <textarea id="symptomTextInput" class="form-control" placeholder="Describe your symptoms here (e.g. I have fever, cold, and body pain for two days)..." rows="3" style="font-size:15px; padding:16px;"></textarea>
+            </div>
+
+            <!-- Patient Info Form -->
+            <div class="card" style="max-width:700px; margin:0 auto 24px; text-align:left; background:var(--bg-input);">
+                <h4 style="font-size:14px; margin-bottom:14px; color:var(--teal);">👤 Patient Details (For Prescription)</h4>
+                
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px;">
+                    <div>
+                        <label class="form-label" style="font-size:12px;">Patient Name *</label>
+                        <input type="text" id="patientNameInput" class="form-control" placeholder="Full name" required>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:12px;">Age *</label>
+                        <input type="number" id="patientAgeInput" class="form-control" placeholder="e.g. 26" required min="1" max="120">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:12px;">Gender</label>
+                        <select id="patientGenderInput" class="form-control">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:12px;">Phone Number *</label>
+                        <input type="tel" id="patientPhoneInput" class="form-control" placeholder="10-digit mobile" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit CTA -->
+            <button type="button" id="analyzeSubmitBtn" class="btn btn-primary" style="padding:14px 36px; font-size:16px;" onclick="runAIClinicalAnalysis()">
+                ⚡ Analyze Symptoms & Generate Prescription →
+            </button>
+
+        </section>
+
+        <!-- AI CLINICAL RESULT SECTION (Hidden Initially) -->
+        <section id="aiResultCard" class="card" style="display:none; max-width:800px; margin:0 auto 30px; border-color:var(--teal); box-shadow:var(--shadow-glow);">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:16px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <h3 style="font-size:20px; color:var(--teal); margin:0;" id="resultHeaderTitle">🤖 AI Clinical Analysis Result</h3>
+                    <span style="font-size:12px; color:var(--text-muted);" id="resultTimestamp">Generated just now</span>
+                </div>
+                <div id="triageBadgeContainer">
+                    <!-- Triage badge inserted here -->
+                </div>
+            </div>
+
+            <!-- Detected Symptoms -->
+            <div style="margin-bottom:20px;">
+                <span class="form-label" style="font-size:12px; text-transform:uppercase; color:var(--text-sub);">Detected Symptoms:</span>
+                <div id="detectedSymptomsList" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+                    <!-- Badge pills -->
+                </div>
+            </div>
+
+            <!-- Suggested Medication Box -->
+            <div class="rx-med-card" id="medicationResultBox">
+                <div class="rx-med-title" id="resMedicineName">Paracetamol 500mg</div>
+                <div style="font-size:14px; margin-bottom:8px;" id="resDosage"><strong>Dosage:</strong> 1 tablet every 6-8 hours after food</div>
+                <div style="font-size:13px; color:var(--text-muted);" id="resInstructions"><strong>Clinical Notes:</strong> Drink plenty of fluids and rest.</div>
+            </div>
+
+            <!-- Doctor Referral Box (Shown if requiresDoctor is true) -->
+            <div id="doctorReferralBox" style="display:none; background:var(--emergency-bg); border:1px solid rgba(239,68,68,0.3); border-radius:var(--radius-md); padding:16px; margin-bottom:20px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="font-size:30px;">👨‍⚕️</div>
+                    <div style="flex-grow:1;">
+                        <h4 style="color:var(--emergency); font-size:15px; margin-bottom:2px;">Specialist Consultation Recommended</h4>
+                        <p style="font-size:12.5px; color:var(--text-muted); margin:0;">
+                            Based on symptom severity, clinical review by an approved doctor is strongly advised.
+                        </p>
+                    </div>
+                    <a href="doctors.html" class="btn btn-danger btn-sm">Consult Doctor Now →</a>
+                </div>
+            </div>
+
+            <!-- Disclaimer Notice -->
+            <div style="background:var(--bg-input); padding:12px 16px; border-radius:var(--radius-md); font-size:12px; color:var(--text-muted); margin-bottom:24px; border-left:3px solid var(--warning); border:1px solid var(--border-color); border-left-width:3px;">
+                ⚠️ <strong>Medical Disclaimer:</strong> This AI recommendation is an assistive triage tool and is not a replacement for comprehensive in-person medical evaluation by a licensed physician.
+            </div>
+
+            <!-- Actions: Go to Digital Prescription / Vending Machine -->
+            <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                <a href="medicines.html" class="btn btn-secondary">
+                    💊 Check Vending Machine Stock
+                </a>
+                <button class="btn btn-primary" onclick="proceedToPrescriptionPage()">
+                    📄 View & Print Digital Prescription (WhatsApp) →
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<div id="toastNotification"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/patient.js"></script>
+<script src="js/multilingual.js"></script>
+<script>
+let speechHandler = null;
+let currentLanguage = "en-IN";
+let latestConsultationResult = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+    speechHandler = new MediLingoSpeech();
+    renderLanguageButtons();
+    autoPopulatePatientDetails();
 });
 
-const upload = multer({
-    storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
-});
+function renderLanguageButtons() {
+    const grid = document.getElementById("languageSelectorGrid");
+    if (!grid) return;
 
-/* =========================
-   MYSQL POOL CONNECTION
-========================= */
-/*const db = mysql.createPool({
-    host: "localhost",
-    user: "root",
-    password: "Sadhu@18",
-    database: "medilingo",
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});*/
-const db = mysql.createPool({
-    host: process.env.DB_HOST,
-    port: Number(process.env.DB_PORT || 10900),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    ssl: {
-        ca: process.env.DB_CA_CERT,
-        rejectUnauthorized: true
-    },
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
-
-// Test connection
-db.getConnection((err, conn) => {
-    if (err) {
-        console.error("Database connection failed:", err.message);
-    } else {
-        console.log("MySQL Connected successfully to database: medilingo");
-        conn.release();
-    }
-});
-
-/* ========================================================
-   MULTILINGUAL NLP & SYMPTOM TRIAGE ENGINE
-======================================================== */
-
-// Multilingual keyword dictionaries
-const SYMPTOM_RULES = [
-    // 1. Emergency / Red Flags (Chest Pain, Severe Breathing, Unconsciousness, Severe Bleeding)
-    {
-        category: "Emergency",
-        keywords: [
-            "chest pain", "heart pain", "cardiac", "severe breath", "cannot breathe", "shortness of breath", "unconscious",
-            "fainting", "severe bleed", "vomiting blood", "stroke", "paralysis", "seizure", "convulsion",
-            "நெஞ்சு வலி", "மாரடைப்பு", "மூச்சுத் திணறல்", "மயக்கம்", "அதிக ரத்தப்போக்கு", "வலிப்பு",
-            "सीने में दर्द", "सांस लेने में तकलीफ", "बेहोशी", "खून की उल्टी", "दौरा"
-        ],
-        symptoms: ["Chest Pain / Cardiac Strain", "Severe Dyspnea / Respiratory Distress"],
-        triage: "Emergency",
-        requiresDoctor: true,
-        medicine: "Further evaluation required - Urgent Emergency Care",
-        dosage: "Immediate Doctor / ER Attention Mandatory",
-        instructions: "Immediate physical hospital / cardiologist consultation required. Do not rely solely on automated medication."
-    },
-    // 2. High Fever & Severe Body Ache / Dengue / Viral
-    {
-        category: "Fever_Severe",
-        keywords: [
-            "high fever", "fever for 3 days", "fever 4 days", "fever 5 days", "fever with chills", "shivering fever",
-            "அதிக காய்ச்சல்", "நடுக்கம்", "3 நாட்களாக காய்ச்சல்",
-            "तेज बुखार", "कपकपी", "3 दिन से बुखार"
-        ],
-        symptoms: ["High Grade Fever", "Chills & Rigors"],
-        triage: "Moderate",
-        requiresDoctor: true,
-        kid: {
-            medicine: "Paracetamol Paediatric Suspension (250mg/5ml)",
-            dosage: "10-15mg/kg body weight every 6-8 hrs. Consult Paediatrician for CBC / Dengue test."
-        },
-        adult: {
-            medicine: "Paracetamol 650mg + ORS",
-            dosage: "1 tablet every 6-8 hrs after food + Hydration. Doctor consultation recommended."
-        },
-        instructions: "Tepid sponging with water. Keep well hydrated. Get Complete Blood Count (CBC) if fever persists."
-    },
-    // 3. Mild Fever & Body Pain / Headache
-    {
-        category: "Fever_Pain",
-        keywords: [
-            "fever", "body pain", "headache", "head ache", "temperature", "bodyache", "tiredness", "fatigue",
-            "காய்ச்சல்", "தலைவலி", "உடல் வலி", "அசதி",
-            "बुखार", "सिरदर्द", "बदन दर्द", "थकान"
-        ],
-        symptoms: ["Mild-Moderate Fever", "Cephalea / Headache", "Myalgia"],
-        triage: "Mild",
-        requiresDoctor: false,
-        kid: {
-            medicine: "Paracetamol Syrup (120mg/5ml)",
-            dosage: "5ml every 6-8 hrs as needed after food (Kids 2-11 yrs)"
-        },
-        adult: {
-            medicine: "Paracetamol 500mg",
-            dosage: "1 tablet every 6-8 hours after food as needed (Max 3 tabs/day)"
-        },
-        instructions: "Drink plenty of warm fluids, take adequate rest, and monitor body temperature."
-    },
-    // 4. Cold, Sneezing, Runny Nose, Allergic Rhinitis
-    {
-        category: "Cold_Allergy",
-        keywords: [
-            "cold", "runny nose", "sneezing", "sneez", "watery nose", "rhinitis", "sinus",
-            "சளி", "மூக்கு ஒழுகுதல்", "தும்மல்", "மூக்கடைப்பு",
-            "जुकाम", "सर्दी", "छींक", "बहती नाक"
-        ],
-        symptoms: ["Allergic Rhinitis", "Common Cold / Rhinorrhea"],
-        triage: "Mild",
-        requiresDoctor: false,
-        kid: {
-            medicine: "Cetirizine Syrup 5mg/5ml + Saline Nasal Drops",
-            dosage: "2.5ml once daily at bedtime for kids + 1 drop saline per nostril"
-        },
-        adult: {
-            medicine: "Cetirizine 10mg",
-            dosage: "1 tablet once daily at bedtime (May cause mild drowsiness)"
-        },
-        instructions: "Perform warm saline steam inhalation twice daily. Stay away from dust, cold drinks, and pollen."
-    },
-    // 5. Wet Productive Cough / Phlegm / Mucus
-    {
-        category: "Wet_Cough",
-        keywords: [
-            "wet cough", "productive cough", "phlegm", "mucus", "chest congestion",
-            "கபம்", "சளி இருமல்", "சளியுடன் கூடிய இருமல்",
-            "बलगम वाली खांसी", "कफ", "छाती में जकड़न"
-        ],
-        symptoms: ["Productive Wet Cough", "Bronchial Mucus Congestion"],
-        triage: "Mild",
-        requiresDoctor: false,
-        kid: {
-            medicine: "Ambroxol Syrup 15mg/5ml (Paediatric)",
-            dosage: "2.5ml to 5ml twice daily after food (Consult doctor for infants)"
-        },
-        adult: {
-            medicine: "Ambroxol 30mg / Bromhexine 8mg",
-            dosage: "1 tablet twice daily after meals for 5 days"
-        },
-        instructions: "Drink warm ginger water, avoid refrigerated foods, steam inhalation for 10 minutes."
-    },
-    // 6. Dry Cough / Throat Tickle
-    {
-        category: "Dry_Cough",
-        keywords: [
-            "dry cough", "cough", "throat tickle", "continuous cough",
-            "வறட்டு இருமல்", "இருமல்", "தொண்டை வறட்சி",
-            "सूखी खांसी", "खांसी"
-        ],
-        symptoms: ["Dry Irritant Cough"],
-        triage: "Mild",
-        requiresDoctor: false,
-        kid: {
-            medicine: "Honey-based herbal cough syrup (Paediatric)",
-            dosage: "5ml twice daily — avoid OTC chemical suppressants for infants without doctor."
-        },
-        adult: {
-            medicine: "Dextromethorphan 10mg Tablet / Syrup",
-            dosage: "1 tablet every 8 hours after food"
-        },
-        instructions: "Gargle with warm salt water. Keep throat hydrated with lukewarm water."
-    },
-    // 7. Sore Throat / Throat Pain / Difficulty Swallowing
-    {
-        category: "Sore_Throat",
-        keywords: [
-            "sore throat", "throat pain", "throat irritation", "tonsil", "swallowing pain",
-            "தொண்டை வலி", "தொண்டை எரிச்சல்", "விழுங்கும்போது வலி",
-            "गले में खराश", "गले में दर्द", "टॉन्सिल"
-        ],
-        symptoms: ["Pharyngitis / Sore Throat", "Throat Irritation"],
-        triage: "Mild",
-        requiresDoctor: false,
-        kid: {
-            medicine: "Warm Saline Gargle + Glycerin Lozenges",
-            dosage: "Gargle 3 times daily, 1 soothing lozenge"
-        },
-        adult: {
-            medicine: "Strepsils / Dequalinium Lozenges + Betadine Gargle",
-            dosage: "Dissolve 1 lozenge slowly every 3-4 hours; warm salt water gargle 3 times/day"
-        },
-        instructions: "Avoid very hot or ice-cold drinks. Warm turmeric milk or honey water recommended."
-    },
-    // 8. Acidity, Heartburn, Gastric, GERD, Indigestion
-    {
-        category: "Acidity_Gastric",
-        keywords: [
-            "acidity", "heartburn", "gas", "bloating", "indigestion", "gastric", "stomach burning", "belching",
-            "அசிடிட்டி", "நெஞ்செரிச்சல்", "வாயு தொல்லை", "செரிமானமின்மை", "வயிறு உப்புசம்",
-            "एसिडिटी", "पेट में जलन", "गैस", "अपच", "खट्टी डकार"
-        ],
-        symptoms: ["Gastritis / Hyperacidity", "Dyspepsia & Flatulence"],
-        triage: "Mild",
-        requiresDoctor: false,
-        kid: {
-            medicine: "Paediatric Simethicone Drops",
-            dosage: "As prescribed by doctor/weight. Avoid heavy antacids for young kids."
-        },
-        adult: {
-            medicine: "Pantoprazole 40mg (or Antacid Chewable Gel)",
-            dosage: "1 tablet in morning 30 minutes before breakfast OR 2 chewable tabs after meals"
-        },
-        instructions: "Eat smaller frequent meals. Avoid spicy/fried foods and do not lie down immediately after dinner."
-    },
-    // 9. Diarrhoea, Loose Motion, Food Poisoning, Dehydration
-    {
-        category: "Diarrhoea",
-        keywords: [
-            "diarrhea", "diarrhoea", "loose motion", "loose stools", "watery stool", "food poison", "dehydration",
-            "வயிற்றுப்போக்கு", "பேதி", "நீர்ச்சத்து குறைவு",
-            "दस्त", "लूज मोशन", "पतले दस्त", "निर्जलीकरण"
-        ],
-        symptoms: ["Acute Gastroenteritis", "Risk of Dehydration"],
-        triage: "Moderate",
-        requiresDoctor: false,
-        kid: {
-            medicine: "ORS (Oral Rehydration Salts) + Zinc Drops (20mg)",
-            dosage: "ORS sips after every loose stool + Zinc once daily for 14 days"
-        },
-        adult: {
-            medicine: "ORS Electral Sachet + Probiotic Capsule (Lactic Acid Bacillus)",
-            dosage: "Dissolve 1 sachet ORS in 1L water and drink; 1 Probiotic capsule twice daily after food"
-        },
-        instructions: "Maintain strict oral hydration. Drink tender coconut water and rice kanji. If blood in stool or high fever occurs, see doctor immediately."
-    },
-    // 10. Vomiting, Nausea, Motion Sickness
-    {
-        category: "Vomiting",
-        keywords: [
-            "vomit", "vomiting", "nausea", "motion sickness", "throwing up",
-            "வாந்தி", "குமட்டல்",
-            "उल्टी", "जी मिचलाना"
-        ],
-        symptoms: ["Emesis / Vomiting", "Nausea"],
-        triage: "Moderate",
-        requiresDoctor: false,
-        kid: {
-            medicine: "Ondansetron Syrup (2mg/5ml) + ORS",
-            dosage: "As per paediatric prescription. Frequent sips of cold ORS solution."
-        },
-        adult: {
-            medicine: "Domperidone 10mg / Ondansetron 4mg",
-            dosage: "1 tablet 30 minutes before food if nausea persists + frequent ORS sips"
-        },
-        instructions: "Take small sips of water or electro-lyte solution. Avoid solid heavy meals until stomach settles."
-    },
-    // 11. Skin Allergy, Rash, Itching, Urticaria
-    {
-        category: "Skin_Rash",
-        keywords: [
-            "skin rash", "rash", "itching", "itchy", "hives", "red spots", "skin allergy", "insect bite",
-            "தோல் அரிப்பு", "தடிப்புகள்", "சிவப்பு புள்ளிகள்", "பூச்சிக் கடி",
-            "त्वचा में खुजली", "चकत्ते", "एलर्जी", "दाने"
-        ],
-        symptoms: ["Pruritus / Urticaria", "Contact Dermatitis / Skin Rash"],
-        triage: "Mild",
-        requiresDoctor: false,
-        kid: {
-            medicine: "Calamine Lotion (Topical)",
-            dosage: "Apply gently on affected rash area 2-3 times daily"
-        },
-        adult: {
-            medicine: "Calamine Lotion + Cetirizine 10mg",
-            dosage: "Apply Calamine lotion topically + 1 Cetirizine tablet at night if severe itching"
-        },
-        instructions: "Do not scratch the lesions. Use mild fragrance-free soap and wear loose cotton clothing."
-    },
-    // 12. Minor Cuts, Wounds, Burns, Scratches
-    {
-        category: "Wounds_Burns",
-        keywords: [
-            "cut", "wound", "scratch", "minor burn", "scrape", "bleed", "injury",
-            "காயம்", "சிராய்ப்பு", "தீக்காயம்", "வெட்டுக்காயம்",
-            "घाव", "कट लगना", "जलना", "खरोंच"
-        ],
-        symptoms: ["Superficial Abrasion / Minor Cut / Burn"],
-        triage: "Mild",
-        requiresDoctor: false,
-        kid: {
-            medicine: "Povidone Iodine 5% Ointment + Sterile Bandage",
-            dosage: "Clean with clean running water, dry, and apply antiseptic cream"
-        },
-        adult: {
-            medicine: "Povidone Iodine 5% / Neosporin Ointment + Burn Silver Sulfadiazine (if burn)",
-            dosage: "Cleanse with antiseptic, apply thin film twice daily and cover with sterile gauze"
-        },
-        instructions: "Ensure Tetanus Toxoid (TT) vaccination status is up to date within 5 years."
-    }
-];
-
-function processSymptomsAI(symptomText, age, language) {
-    const text = (symptomText || "").toLowerCase().trim();
-    const patientAge = parseInt(age) || 25;
-    const isKid = patientAge > 0 && patientAge < 12;
-    const isTeen = patientAge >= 12 && patientAge < 18;
-    const isAdult = patientAge >= 18;
-
-    const detectedSymptoms = [];
-    let matchedRule = null;
-
-    // Search rules in priority order
-    for (const rule of SYMPTOM_RULES) {
-        for (const kw of rule.keywords) {
-            if (text.includes(kw.toLowerCase())) {
-                matchedRule = rule;
-                rule.symptoms.forEach(s => {
-                    if (!detectedSymptoms.includes(s)) detectedSymptoms.push(s);
-                });
-                break;
-            }
-        }
-        if (matchedRule && matchedRule.triage === "Emergency") break; // Stop early on emergency
-    }
-
-    if (!matchedRule) {
-        return {
-            detectedSymptoms: detectedSymptoms.length > 0 ? detectedSymptoms : ["Non-specific Symptoms / Complex Presentation"],
-            triageLevel: "Moderate",
-            requiresDoctor: true,
-            aiConfidence: "Moderate",
-            medicine: "Further evaluation required",
-            dosage: "Please consult a verified doctor for targeted diagnosis",
-            instructions: "Your symptom description requires customized clinical examination by a certified physician."
-        };
-    }
-
-    if (matchedRule.requiresDoctor || matchedRule.triage === "Emergency") {
-        return {
-            detectedSymptoms: detectedSymptoms,
-            triageLevel: matchedRule.triage,
-            requiresDoctor: true,
-            aiConfidence: "High",
-            medicine: matchedRule.medicine,
-            dosage: matchedRule.dosage,
-            instructions: matchedRule.instructions
-        };
-    }
-
-    // Age-specific medication recommendation
-    const medInfo = isKid ? matchedRule.kid : matchedRule.adult;
-    return {
-        detectedSymptoms: detectedSymptoms,
-        triageLevel: matchedRule.triage,
-        requiresDoctor: false,
-        aiConfidence: "High",
-        medicine: medInfo.medicine,
-        dosage: medInfo.dosage,
-        instructions: matchedRule.instructions
-    };
-}
-
-/* ========================================================
-   1. PATIENT REST APIs
-======================================================== */
-
-// Patient Registration
-app.post("/api/patient/register", (req, res) => {
-    const { name, phone, email, age, gender, password } = req.body;
-    if (!name || !phone || !password) {
-        return res.status(400).json({ success: false, message: "Name, phone, and password are required" });
-    }
-
-    const patientUid = "PAT-" + Math.floor(100000 + Math.random() * 900000);
-    const sql = `
-        INSERT INTO patients (patient_uid, name, phone, email, age, gender, password)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    db.query(sql, [patientUid, name, phone, email || null, parseInt(age) || null, gender || "Not specified", password], (err, result) => {
-        if (err) {
-            if (err.code === "ER_DUP_ENTRY") {
-                return res.status(409).json({ success: false, message: "A patient with this mobile number or email already exists." });
-            }
-            console.error("Patient Register Error:", err);
-            return res.status(500).json({ success: false, message: "Database error during registration" });
-        }
-
-        res.json({
-            success: true,
-            message: "Patient registered successfully",
-            patient: {
-                id: result.insertId,
-                patient_uid: patientUid,
-                name,
-                phone,
-                email,
-                age,
-                gender
-            }
-        });
+    let html = "";
+    MULTILINGUAL_DATA.languages.forEach(lang => {
+        const isActive = lang.code === currentLanguage;
+        html += `
+            <div class="lang-btn ${isActive ? 'active' : ''}" onclick="selectLanguage('${lang.code}')">
+                <div>${lang.flag} ${lang.nativeName}</div>
+                <span class="sub-text">${lang.name}</span>
+            </div>
+        `;
     });
-});
+    grid.innerHTML = html;
+}
 
-// Patient Login
-app.post("/api/patient/login", (req, res) => {
-    const { identifier, password, isOtp, otp } = req.body;
+function selectLanguage(langCode) {
+    currentLanguage = langCode;
+    speechHandler.setLanguage(langCode);
+    renderLanguageButtons();
 
-    if (isOtp) {
-        // OTP Login simulation
-        if (otp !== "123456" && otp !== "582910" && !otp) {
-            return res.status(400).json({ success: false, message: "Invalid OTP code. Use 123456 for demo." });
-        }
-        db.query("SELECT * FROM patients WHERE phone = ? OR email = ? LIMIT 1", [identifier, identifier], (err, results) => {
-            if (err) return res.status(500).json({ success: false, message: "Database error" });
-            if (results.length === 0) {
-                return res.status(404).json({ success: false, message: "No patient account found with this phone/email." });
+    const t = MULTILINGUAL_DATA.translations[langCode] || MULTILINGUAL_DATA.translations["en-IN"];
+    document.getElementById("langHeroTitle").innerText = t.speakNow;
+    document.getElementById("langHeroSub").innerText = t.listening.replace("...", "");
+    document.getElementById("symptomTextInput").setAttribute("placeholder", t.placeholderSymptom);
+    Auth.showToast(`Language switched to ${MULTILINGUAL_DATA.languages.find(l => l.code === langCode).nativeName}`, "success");
+}
+
+function toggleVoiceRecording() {
+    const micBtn = document.getElementById("voiceMicBtn");
+    const statusMsg = document.getElementById("voiceStatusMsg");
+    const t = MULTILINGUAL_DATA.translations[currentLanguage] || MULTILINGUAL_DATA.translations["en-IN"];
+
+    if (speechHandler.isRecording) {
+        speechHandler.stopListening();
+        micBtn.classList.remove("recording");
+        statusMsg.innerText = "Voice recording stopped.";
+    } else {
+        micBtn.classList.add("recording");
+        statusMsg.innerText = t.listening;
+
+        speechHandler.startListening(
+            (transcript) => {
+                const textInput = document.getElementById("symptomTextInput");
+                textInput.value = transcript;
+                statusMsg.innerText = t.speakDone;
+                micBtn.classList.remove("recording");
+            },
+            (state) => {
+                if (state === "idle") {
+                    micBtn.classList.remove("recording");
+                }
+            },
+            (error) => {
+                statusMsg.innerText = error;
+                micBtn.classList.remove("recording");
             }
-            const p = results[0];
-            delete p.password;
-            return res.json({ success: true, message: "OTP login successful", patient: p });
-        });
+        );
+    }
+}
+
+function useSamplePrompt(type) {
+    const textInput = document.getElementById("symptomTextInput");
+    if (type === 'emergency') {
+        textInput.value = "Severe chest pain radiating to left arm, heavy sweating and shortness of breath.";
+    } else {
+        const langObj = MULTILINGUAL_DATA.languages[type] || MULTILINGUAL_DATA.languages[0];
+        selectLanguage(langObj.code);
+        textInput.value = langObj.sample;
+    }
+}
+
+function autoPopulatePatientDetails() {
+    const patient = Auth.getSession("patient");
+    if (patient) {
+        if (patient.name) document.getElementById("patientNameInput").value = patient.name;
+        if (patient.age) document.getElementById("patientAgeInput").value = patient.age;
+        if (patient.gender) document.getElementById("patientGenderInput").value = patient.gender;
+        if (patient.phone) document.getElementById("patientPhoneInput").value = patient.phone;
+    }
+}
+
+async function runAIClinicalAnalysis() {
+    const symptomText = document.getElementById("symptomTextInput").value.trim();
+    const name = document.getElementById("patientNameInput").value.trim();
+    const age = document.getElementById("patientAgeInput").value.trim();
+    const gender = document.getElementById("patientGenderInput").value;
+    const phone = document.getElementById("patientPhoneInput").value.trim();
+    const btn = document.getElementById("analyzeSubmitBtn");
+
+    if (!symptomText) {
+        alert("Please speak or type your symptoms first.");
+        return;
+    }
+    if (!name || !age || !phone) {
+        alert("Please fill in patient name, age, and phone number.");
         return;
     }
 
-    if (!identifier || !password) {
-        return res.status(400).json({ success: false, message: "Please provide mobile/email and password" });
-    }
+    btn.disabled = true;
+    btn.innerText = "⚡ Processing Multilingual NLP & AI Triage...";
 
-    db.query("SELECT * FROM patients WHERE (phone = ? OR email = ?) AND password = ? LIMIT 1", [identifier, identifier, password], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        if (results.length === 0) {
-            return res.status(401).json({ success: false, message: "Invalid credentials. Please check your password." });
-        }
-        const p = results[0];
-        delete p.password;
-        res.json({ success: true, message: "Login successful", patient: p });
-    });
-});
+    const patient = Auth.getSession("patient");
+    const patientId = patient ? (patient.patient_uid || patient.id) : ("PAT-" + Date.now().toString().slice(-6));
 
-// Patient Profile & Personal Consultations (CRITICAL: Only for this patient!)
-app.get("/api/patient/profile/:patientId", (req, res) => {
-    const patientId = req.params.patientId;
-    if (!patientId || patientId.trim().toUpperCase() === "GUEST" || patientId === "undefined" || patientId === "null") {
-        return res.status(401).json({ success: false, message: "Authentication required. Guest users cannot access consultation records." });
-    }
-    db.query("SELECT id, patient_uid, name, phone, email, age, gender, created_at FROM patients WHERE id = ? OR patient_uid = ? LIMIT 1", [patientId, patientId], (err, patientRows) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        if (patientRows.length === 0) {
-            return res.status(404).json({ success: false, message: "Patient profile not found" });
-        }
-        const patient = patientRows[0];
-        // Fetch only consultations belonging to this patient_id or phone
-        db.query(
-            "SELECT * FROM consultations WHERE patient_id = ? OR phn_num = ? ORDER BY s_no DESC LIMIT 20",
-            [patient.patient_uid || patientId, patient.phone],
-            (err2, consultRows) => {
-                if (err2) return res.status(500).json({ success: false, message: "Database error" });
-                res.json({
-                    success: true,
-                    patient,
-                    consultations: consultRows
-                });
-            }
-        );
-    });
-});
-
-// AI Symptom Processing & Prescription
-app.post(["/ai-prescription", "/api/ai-prescription"], (req, res) => {
-    const { patient_id, name, age, gender, phn_num, language, symptom } = req.body;
-
-    if (!symptom || !name) {
-        return res.status(400).json({ success: false, message: "Patient name and symptoms are required" });
-    }
-
-    const aiResult = processSymptomsAI(symptom, age, language);
-    const patientUid = patient_id || "PAT-" + Date.now().toString().slice(-6);
-
-    const sql = `
-        INSERT INTO consultations
-        (patient_id, name, age, gender, phn_num, language, symptom, detected_symptoms, ai_confidence, triage_level, requires_doctor, medication_suggested, dosage, instructions, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const status = aiResult.requiresDoctor ? "Pending_Doctor" : "Completed";
-
-    db.query(sql, [
-        patientUid,
-        name,
-        parseInt(age) || 25,
-        gender || "Not specified",
-        phn_num || "N/A",
-        language || "English",
-        symptom,
-        aiResult.detectedSymptoms.join(", "),
-        aiResult.aiConfidence,
-        aiResult.triageLevel,
-        aiResult.requiresDoctor ? 1 : 0,
-        aiResult.medicine,
-        aiResult.dosage,
-        aiResult.instructions,
-        status
-    ], (err, result) => {
-        if (err) {
-            console.error("Consultation insert error:", err);
-            // Return AI response even if DB write fails
-            return res.json({
-                success: true,
-                consultationId: null,
-                patient_id: patientUid,
-                name,
-                age,
-                gender,
-                phn_num,
-                symptoms: symptom,
-                detectedSymptoms: aiResult.detectedSymptoms,
-                triageLevel: aiResult.triageLevel,
-                requiresDoctor: aiResult.requiresDoctor,
-                aiConfidence: aiResult.aiConfidence,
-                medicine: aiResult.medicine,
-                dosage: aiResult.dosage,
-                instructions: aiResult.instructions
-            });
-        }
-
-        res.json({
-            success: true,
-            consultationId: result.insertId,
-            patient_id: patientUid,
-            name,
-            age,
-            gender,
-            phn_num,
-            symptoms: symptom,
-            detectedSymptoms: aiResult.detectedSymptoms,
-            triageLevel: aiResult.triageLevel,
-            requiresDoctor: aiResult.requiresDoctor,
-            aiConfidence: aiResult.aiConfidence,
-            medicine: aiResult.medicine,
-            dosage: aiResult.dosage,
-            instructions: aiResult.instructions
-        });
-    });
-});
-
-/* ========================================================
-   2. DOCTOR REST APIs
-======================================================== */
-
-// Doctor Registration with Certificate Upload
-app.post(["/doctor-register", "/api/doctor/register"], upload.single("certificate"), (req, res) => {
-    const { name, reg_number, email, phone, password, specialization, qualification, experience } = req.body;
-    const certificatePath = req.file ? "uploads/" + req.file.filename : "uploads/default_cert.pdf";
-
-    if (!name || !reg_number || !email || !phone || !password) {
-        return res.status(400).json({ success: false, message: "All required fields must be provided" });
-    }
-
-    const sql = `
-        INSERT INTO doctors 
-        (name, reg_number, email, phone, password, specialization, qualification, experience, certificate_path, status, is_online)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', 1)
-    `;
-
-    db.query(sql, [
-        name,
-        reg_number,
-        email,
-        phone,
-        password,
-        specialization || "General Physician",
-        qualification || "MBBS",
-        experience || "3+ Years",
-        certificatePath
-    ], (err, result) => {
-        if (err) {
-            if (err.code === "ER_DUP_ENTRY") {
-                return res.status(409).json({ success: false, message: "Medical Registration Number or Email already registered." });
-            }
-            console.error("Doctor Insert error:", err);
-            return res.status(500).json({ success: false, message: "Doctor registration failed" });
-        }
-
-        res.json({
-            success: true,
-            doctorId: result.insertId,
-            status: "Pending",
-            message: "Registration submitted successfully! Your medical certificate is under verification by the admin."
-        });
-    });
-});
-
-// Doctor Login
-app.post(["/doctor-login", "/api/doctor/login"], (req, res) => {
-    const { email, password, isOtp, otp } = req.body;
-
-    if (!email) {
-        return res.status(400).json({ success: false, message: "Please provide your email or registration number" });
-    }
-
-    db.query("SELECT * FROM doctors WHERE email = ? OR reg_number = ? OR phone = ? LIMIT 1", [email, email, email], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        if (results.length === 0) {
-            return res.status(404).json({ success: false, message: "Doctor account not found" });
-        }
-
-        const doc = results[0];
-
-        if (!isOtp && doc.password !== password) {
-            return res.status(401).json({ success: false, message: "Incorrect password" });
-        }
-
-        if (isOtp && otp !== "123456" && !otp) {
-            return res.status(400).json({ success: false, message: "Invalid OTP. Use 123456 for demo." });
-        }
-
-        // Verification Status Check
-        if (doc.status === "Pending") {
-            return res.status(403).json({
-                success: false,
-                status: "Pending",
-                message: "Verification Pending: Your medical credentials are under review by Medi Lingo Admin. You will receive access upon approval.",
-                doctor: { id: doc.id, name: doc.name, status: doc.status }
-            });
-        }
-
-        if (doc.status === "Rejected") {
-            return res.status(403).json({
-                success: false,
-                status: "Rejected",
-                message: "Registration Rejected: Your medical registration certificate could not be verified by the admin.",
-                doctor: { id: doc.id, name: doc.name, status: doc.status }
-            });
-        }
-
-        delete doc.password;
-        res.json({
-            success: true,
-            message: "Doctor authenticated successfully",
-            doctor: doc
-        });
-    });
-});
-
-// Check Doctor Verification Status
-app.get("/api/doctor/status/:identifier", (req, res) => {
-    const id = req.params.identifier;
-    db.query("SELECT id, name, reg_number, email, status, specialization, qualification, certificate_path FROM doctors WHERE email = ? OR phone = ? OR reg_number = ? OR id = ? LIMIT 1", [id, id, id, parseInt(id) || 0], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        if (results.length === 0) return res.status(404).json({ success: false, message: "Doctor not found" });
-        res.json({ success: true, doctor: results[0] });
-    });
-});
-
-// Verified Doctors List for Patient Portal (ONLY Approved Doctors!)
-app.get(["/doctors", "/api/doctors/verified"], (req, res) => {
-    const sql = `
-        SELECT id, name, reg_number, specialization, qualification, experience, is_online, rating, status
-        FROM doctors 
-        WHERE status = 'Approved'
-        ORDER BY is_online DESC, rating DESC
-    `;
-    db.query(sql, (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        res.json(results);
-    });
-});
-
-// Incoming Patient Requests for Doctor Portal
-app.get(["/doctor-requests", "/api/doctor/requests"], (req, res) => {
-    const sql = `
-        SELECT * FROM consultations 
-        WHERE status = 'Pending_Doctor' OR requires_doctor = 1
-        ORDER BY s_no DESC 
-        LIMIT 10
-    `;
-    db.query(sql, (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        res.json(results);
-    });
-});
-
-// Doctor Consultation History
-app.get(["/doctor-history", "/api/doctor/history"], (req, res) => {
-    const doctorId = req.query.doctorId;
-    let sql = `
-        SELECT * FROM consultations 
-        WHERE medication_suggested IS NOT NULL
-    `;
-    const params = [];
-    if (doctorId) {
-        sql += ` AND doctor_id = ?`;
-        params.push(doctorId);
-    }
-    sql += ` ORDER BY s_no DESC LIMIT 50`;
-
-    db.query(sql, params, (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        res.json(results);
-    });
-});
-
-// Doctor updates/sends prescription
-app.post(["/update-prescription", "/api/doctor/send-prescription"], (req, res) => {
-    const { id, medicine, dosage, instructions, doctorId, doctorName } = req.body;
-
-    if (!id || !medicine) {
-        return res.status(400).json({ success: false, message: "Consultation ID and medicine are required" });
-    }
-
-    const sql = `
-        UPDATE consultations 
-        SET medication_suggested = ?, dosage = ?, instructions = ?, doctor_id = ?, doctor_name = ?, status = 'Completed', requires_doctor = 0
-        WHERE s_no = ?
-    `;
-
-    db.query(sql, [
-        medicine,
-        dosage || "As advised by doctor",
-        instructions || "Take with warm water after food",
-        doctorId || null,
-        doctorName || "Medi Lingo Doctor",
-        id
-    ], (err, result) => {
-        if (err) {
-            console.error("Update prescription error:", err);
-            return res.status(500).json({ success: false, message: "Error updating prescription" });
-        }
-        res.json({ success: true, message: "Prescription updated and sent to patient successfully" });
-    });
-});
-
-/* ========================================================
-   3. ADMIN REST APIs
-======================================================== */
-
-// Admin Login
-app.post("/api/admin/login", (req, res) => {
-    const { username, password } = req.body;
-    if ((username === "admin@medilingo.com" || username === "admin") && (password === "Admin@2026" || password === "admin123" || password === "Sadhu@18")) {
-        res.json({
-            success: true,
-            admin: {
-                name: "Medi Lingo Executive Admin",
-                role: "SuperAdmin",
-                email: "admin@medilingo.com"
-            }
-        });
-    } else {
-        res.status(401).json({ success: false, message: "Invalid admin credentials" });
-    }
-});
-
-// Admin System Statistics
-app.get("/api/admin/stats", (req, res) => {
-    const queries = {
-        patients: "SELECT COUNT(*) as count FROM patients",
-        doctors: "SELECT COUNT(*) as count FROM doctors",
-        pendingDoctors: "SELECT COUNT(*) as count FROM doctors WHERE status = 'Pending'",
-        approvedDoctors: "SELECT COUNT(*) as count FROM doctors WHERE status = 'Approved'",
-        consultations: "SELECT COUNT(*) as count FROM consultations",
-        emergencyCases: "SELECT COUNT(*) as count FROM consultations WHERE triage_level = 'Emergency' OR requires_doctor = 1",
-        vendingInventory: "SELECT SUM(stock_quantity) as totalStock, COUNT(*) as totalItems FROM medicines"
-    };
-
-    db.query(`
-        ${queries.patients};
-        ${queries.doctors};
-        ${queries.pendingDoctors};
-        ${queries.approvedDoctors};
-        ${queries.consultations};
-        ${queries.emergencyCases};
-        ${queries.vendingInventory};
-    `, (err, results) => {
-        if (err) {
-            // Fallback individual queries
-            db.query("SELECT COUNT(*) as totalConsultations FROM consultations", (e1, r1) => {
-                db.query("SELECT COUNT(*) as totalDoctors FROM doctors", (e2, r2) => {
-                    db.query("SELECT COUNT(*) as pendingDoctors FROM doctors WHERE status = 'Pending'", (e3, r3) => {
-                        db.query("SELECT COUNT(*) as totalPatients FROM patients", (e4, r4) => {
-                            res.json({
-                                success: true,
-                                stats: {
-                                    totalPatients: (r4 && r4[0]) ? r4[0].totalPatients : 0,
-                                    totalDoctors: (r2 && r2[0]) ? r2[0].totalDoctors : 0,
-                                    pendingDoctors: (r3 && r3[0]) ? r3[0].pendingDoctors : 0,
-                                    approvedDoctors: ((r2 && r2[0]) ? r2[0].totalDoctors : 0) - ((r3 && r3[0]) ? r3[0].pendingDoctors : 0),
-                                    totalConsultations: (r1 && r1[0]) ? r1[0].totalConsultations : 0,
-                                    emergencyCases: 0,
-                                    totalStock: 235
-                                }
-                            });
-                        });
-                    });
-                });
-            });
-            return;
-        }
-
-        res.json({
-            success: true,
-            stats: {
-                totalPatients: results[0][0].count,
-                totalDoctors: results[1][0].count,
-                pendingDoctors: results[2][0].count,
-                approvedDoctors: results[3][0].count,
-                totalConsultations: results[4][0].count,
-                emergencyCases: results[5][0].count,
-                totalStock: results[6][0].totalStock || 0
-            }
-        });
-    });
-});
-
-// All Doctors (for Admin Verification / Approval)
-app.get(["/api/admin/doctors", "/api/admin/pending-doctors"], (req, res) => {
-    db.query("SELECT * FROM doctors ORDER BY CASE WHEN status = 'Pending' THEN 1 WHEN status = 'Approved' THEN 2 ELSE 3 END, id DESC", (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        res.json(results);
-    });
-});
-
-// Approve Doctor
-app.post("/api/admin/approve-doctor", (req, res) => {
-    const { doctorId } = req.body;
-    db.query("UPDATE doctors SET status = 'Approved' WHERE id = ?", [doctorId], (err, result) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        res.json({ success: true, message: "Doctor verified and approved successfully!" });
-    });
-});
-
-// Reject Doctor
-app.post("/api/admin/reject-doctor", (req, res) => {
-    const { doctorId } = req.body;
-    db.query("UPDATE doctors SET status = 'Rejected' WHERE id = ?", [doctorId], (err, result) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        res.json({ success: true, message: "Doctor registration rejected." });
-    });
-});
-
-// Admin All Consultations Table (Admin-only access!)
-app.get(["/all-consultations", "/api/admin/all-consultations"], (req, res) => {
-    db.query("SELECT * FROM consultations ORDER BY s_no DESC", (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        res.json(results);
-    });
-});
-
-/* ========================================================
-   4. SMART VENDING MACHINE & IoT REST APIs
-======================================================== */
-
-// Get all medicines & vending slot inventory
-app.get("/api/vending/medicines", (req, res) => {
-    db.query("SELECT * FROM medicines ORDER BY slot_number ASC, id ASC", (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        res.json(results);
-    });
-});
-
-// Trigger Dispense Action (Hardware IoT ready)
-app.post("/api/vending/dispense", (req, res) => {
-    const { medicineId, slotNumber, patientName, patientPhone, quantity } = req.body;
-    const qty = parseInt(quantity) || 1;
-
-    // Check stock
-    db.query("SELECT * FROM medicines WHERE id = ? OR slot_number = ? LIMIT 1", [medicineId, slotNumber], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: "Database error" });
-        if (results.length === 0) {
-            return res.status(404).json({ success: false, message: "Medicine slot not found in vending machine" });
-        }
-
-        const med = results[0];
-        if (med.stock_quantity < qty) {
-            return res.status(400).json({ success: false, message: `Insufficient stock! Only ${med.stock_quantity} available.` });
-        }
-
-        const newStock = med.stock_quantity - qty;
-        const isAvailable = newStock > 0 ? 1 : 0;
-        const orderId = "VEND-" + Date.now().toString().slice(-6);
-        const totalPrice = med.price * qty;
-
-        // Deduct stock
-        db.query("UPDATE medicines SET stock_quantity = ?, is_available = ? WHERE id = ?", [newStock, isAvailable, med.id], (err2) => {
-            if (err2) console.error("Stock update error:", err2);
-
-            // Log dispense order
-            db.query(`
-                INSERT INTO vending_orders 
-                (order_id, patient_name, patient_phone, medicine_id, medicine_name, quantity, total_price, slot_number, payment_status, dispense_status, sensor_verified)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Paid', 'Dispensed', 1)
-            `, [orderId, patientName || "Walk-in Patient", patientPhone || "N/A", med.id, med.name, qty, totalPrice, med.slot_number], (err3) => {
-                if (err3) console.error("Vending order insert error:", err3);
-
-                // Return IoT dispatch instruction for Arduino/Microcontroller
-                res.json({
-                    success: true,
-                    orderId,
-                    medicineName: med.name,
-                    slotNumber: med.slot_number,
-                    quantity: qty,
-                    totalPrice,
-                    remainingStock: newStock,
-                    sensorVerified: true,
-                    hardwareCommand: `DISPENSE_SLOT_${med.slot_number}_QTY_${qty}`,
-                    message: `Medicine successfully dispensed from Slot #${med.slot_number}!`
-                });
-            });
-        });
-    });
-});
-
-// Hardware Status Heartbeat (for Microcontroller / Arduino / ESP32)
-app.get("/api/vending/status", (req, res) => {
-    res.json({
-        status: "ONLINE",
-        machineId: "ML-VEND-01",
-        irSensorStatus: "NORMAL",
-        motorDriverStatus: "READY",
-        slotsConfigured: 8,
-        serverTime: new Date().toISOString()
-    });
-});
-
-// Hardware Webhook for IR Sensor Confirmation from Arduino
-app.post("/api/vending/hardware-event", (req, res) => {
-    const { slotNumber, sensorTriggered, orderId } = req.body;
-    console.log(`[IoT Webhook] Hardware confirmed drop for Slot ${slotNumber}, Order: ${orderId}, Sensor: ${sensorTriggered}`);
-    res.json({ received: true, ack: "DISPENSE_CONFIRMED" });
-});
-
-/* ========================================================
-   MEDICINE REFERENCE DATASET API (50 Essential Medicines)
-======================================================== */
-app.get("/api/medicine-reference", (req, res) => {
     try {
-        const dataPath = path.join(__dirname, "data", "medicines-reference.json");
-        if (fs.existsSync(dataPath)) {
-            const raw = fs.readFileSync(dataPath, "utf-8");
-            let data = JSON.parse(raw);
-            const { q, category } = req.query;
-            if (category && category !== "All") {
-                data = data.filter(m => m.category === category);
-            }
-            if (q) {
-                const query = q.toLowerCase().trim();
-                data = data.filter(m => 
-                    (m.medicine && m.medicine.toLowerCase().includes(query)) ||
-                    (m.generic_name && m.generic_name.toLowerCase().includes(query)) ||
-                    (m.problem && m.problem.toLowerCase().includes(query)) ||
-                    (m.symptoms && m.symptoms.toLowerCase().includes(query)) ||
-                    (m.indication && m.indication.toLowerCase().includes(query)) ||
-                    (m.strengths_available && m.strengths_available.some(s => s.toLowerCase().includes(query))) ||
-                    (m.common_uses && m.common_uses.some(u => u.toLowerCase().includes(query)))
-                );
-            }
-            return res.json(data);
-        }
-        res.status(404).json({ error: "Medicine reference data not found" });
-    } catch (e) {
-        console.error("Medicine reference error:", e);
-        res.status(500).json({ error: "Failed to load medicine reference data" });
-    }
-});
+        const res = await fetch(`${window.location.origin}/api/ai-prescription`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                patient_id: patientId,
+                name: name,
+                age: age,
+                gender: gender,
+                phn_num: phone,
+                language: MULTILINGUAL_DATA.languages.find(l => l.code === currentLanguage)?.name || "English",
+                symptom: symptomText
+            })
+        });
 
-/* =========================
-   SERVER START
-========================= */
-app.listen(PORT, () => {
-    console.log(`====================================================`);
-    console.log(`Medi Lingo Server running on http://localhost:${PORT}`);
-    console.log(`Patient Portal : http://localhost:${PORT}/index.html`);
-    console.log(`Doctor Portal  : http://localhost:${PORT}/doctor-login.html`);
-    console.log(`Admin Portal   : http://localhost:${PORT}/admin-login.html`);
-    console.log(`====================================================`);
-});
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.message || `Backend returned HTTP ${res.status}`);
+        }
+        if (!data || data.success === false) {
+            throw new Error(data.message || "The backend did not return a valid consultation result.");
+        }
+        latestConsultationResult = data;
+        latestConsultationResult.patientName = name;
+        latestConsultationResult.patientAge = age;
+        latestConsultationResult.patientGender = gender;
+        latestConsultationResult.patientPhone = phone;
+
+        // Store in localStorage for the digital prescription page
+        localStorage.setItem("medilingo_last_rx", JSON.stringify(latestConsultationResult));
+
+        renderAIResult(data);
+        btn.disabled = false;
+        btn.innerText = "⚡ Analyze Symptoms & Generate Prescription →";
+    } catch (e) {
+        console.error("AI Analysis error:", e);
+        alert(`AI consultation failed: ${e.message || "Unable to connect to the backend."}`);
+        btn.disabled = false;
+        btn.innerText = "⚡ Analyze Symptoms & Generate Prescription →";
+    }
+}
+
+function renderAIResult(data) {
+    const resultCard = document.getElementById("aiResultCard");
+    resultCard.style.display = "block";
+
+    // Triage badge
+    const isEmergency = data.triageLevel === "Emergency";
+    const triageBadge = document.getElementById("triageBadgeContainer");
+    triageBadge.innerHTML = `
+        <span class="status-badge ${isEmergency ? 'emergency' : (data.triageLevel === 'Moderate' ? 'warning' : 'approved')}" style="font-size:13px; padding:6px 14px;">
+            ${isEmergency ? '🚨 Red Flag Emergency' : (data.triageLevel === 'Moderate' ? '⚠️ Moderate Severity' : '✅ Mild / Common Condition')}
+        </span>
+    `;
+
+    // Detected symptoms
+    const symContainer = document.getElementById("detectedSymptomsList");
+    symContainer.innerHTML = (data.detectedSymptoms || [data.symptoms]).map(s => `
+        <span class="pill-badge teal">🔍 ${s}</span>
+    `).join("");
+
+    // Medication box
+    document.getElementById("resMedicineName").innerText = data.medicine;
+    document.getElementById("resDosage").innerHTML = `<strong>Dosage:</strong> ${data.dosage}`;
+    document.getElementById("resInstructions").innerHTML = `<strong>Clinical Notes:</strong> ${data.instructions || 'Consult healthcare provider if symptoms persist.'}`;
+
+    // Doctor referral alert
+    const doctorRefBox = document.getElementById("doctorReferralBox");
+    if (data.requiresDoctor || isEmergency) {
+        doctorRefBox.style.display = "block";
+    } else {
+        doctorRefBox.style.display = "none";
+    }
+
+    // Scroll to results smoothly
+    resultCard.scrollIntoView({ behavior: 'smooth' });
+}
+
+function proceedToPrescriptionPage() {
+    if (!latestConsultationResult) {
+        alert("Please analyze symptoms first.");
+        return;
+    }
+    window.location.href = "prescription.html";
+}
+</script>
+
+</body>
+</html>

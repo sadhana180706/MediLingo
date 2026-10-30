@@ -314,7 +314,7 @@ function autoPopulatePatientDetails() {
         if (patient.phone) document.getElementById("patientPhoneInput").value = patient.phone;
     }
 }
-const API_BASE = window.location.origin;
+
 async function runAIClinicalAnalysis() {
     const symptomText = document.getElementById("symptomTextInput").value.trim();
     const name = document.getElementById("patientNameInput").value.trim();
@@ -339,7 +339,7 @@ async function runAIClinicalAnalysis() {
     const patientId = patient ? (patient.patient_uid || patient.id) : ("PAT-" + Date.now().toString().slice(-6));
 
     try {
-        const res = await fetch(`${API_BASE}/api/ai-prescription`, {
+        const res = await fetch(`${window.location.origin}/api/ai-prescription`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -354,6 +354,12 @@ async function runAIClinicalAnalysis() {
         });
 
         const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.message || `Backend returned HTTP ${res.status}`);
+        }
+        if (!data || data.success === false) {
+            throw new Error(data.message || "The backend did not return a valid consultation result.");
+        }
         latestConsultationResult = data;
         latestConsultationResult.patientName = name;
         latestConsultationResult.patientAge = age;
@@ -368,7 +374,7 @@ async function runAIClinicalAnalysis() {
         btn.innerText = "⚡ Analyze Symptoms & Generate Prescription →";
     } catch (e) {
         console.error("AI Analysis error:", e);
-        alert("Error connecting to AI clinical backend.");
+        alert(`AI consultation failed: ${e.message || "Unable to connect to the backend."}`);
         btn.disabled = false;
         btn.innerText = "⚡ Analyze Symptoms & Generate Prescription →";
     }
