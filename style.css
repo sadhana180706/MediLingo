@@ -727,6 +727,132 @@ a:hover {
     margin-bottom: 24px;
 }
 
+/* ========================================================
+   HERO FEATURE HIGHLIGHTS (Clean Informational List)
+   ======================================================== */
+.hero-features {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    row-gap: 12px;
+    column-gap: 0;
+    margin-bottom: 28px;
+    font-size: 13.5px;
+    line-height: 1.4;
+    cursor: default;
+    user-select: none;
+}
+
+.hero-feature-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #CBD5E1;
+    font-size: 13.5px;
+    font-weight: 400;
+    cursor: default;
+    user-select: none;
+    white-space: nowrap;
+    letter-spacing: -0.1px;
+    background: none;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+}
+
+.hero-feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--teal);
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.hero-feature-icon svg {
+    display: block;
+    width: 15px;
+    height: 15px;
+    stroke: currentColor;
+}
+
+.hero-feature-text {
+    color: #CBD5E1;
+    font-size: 13.5px;
+    font-weight: 400;
+    letter-spacing: -0.1px;
+}
+
+.hero-feature-text .highlight {
+    color: var(--teal);
+    font-weight: 600;
+}
+
+.hero-feature-divider {
+    display: inline-block;
+    width: 1px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 18px;
+    flex-shrink: 0;
+}
+
+/* Light Theme Adaptations */
+[data-theme="light"] .hero-features,
+[data-theme="light"] .hero-feature-item,
+[data-theme="light"] .hero-feature-text {
+    color: #CBD5E1;
+}
+
+[data-theme="light"] .hero-feature-icon {
+    color: #14B8A6;
+}
+
+[data-theme="light"] .hero-feature-text .highlight {
+    color: #2DD4BF;
+}
+
+[data-theme="light"] .hero-feature-divider {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+/* Responsive Behavior */
+@media (max-width: 900px) {
+    .hero-features {
+        row-gap: 10px;
+        column-gap: 18px;
+    }
+    .hero-feature-divider {
+        display: none;
+    }
+    .hero-feature-item {
+        white-space: normal;
+    }
+}
+
+@media (max-width: 640px) {
+    .hero-features {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 14px;
+        margin-bottom: 22px;
+    }
+    .hero-feature-item {
+        white-space: normal;
+        align-items: flex-start;
+    }
+    .hero-feature-icon {
+        margin-top: 2px;
+    }
+}
+
+@media (max-width: 440px) {
+    .hero-features {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
 .hero-badges {
     display: flex;
     flex-wrap: wrap;
@@ -1108,6 +1234,94 @@ select option {
 
 .modern-table tbody tr:hover {
     background: var(--bg-card-hover);
+}
+
+/* ========================================================
+   PATIENT PROFILE SEARCH ROW & GUEST LOCK CARD
+   ======================================================== */
+.profile-search-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 24px;
+    width: 100%;
+}
+
+.guest-lock-card {
+    text-align: center;
+    padding: 48px 24px;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 540px;
+    margin: 32px auto;
+    border-radius: var(--radius-lg);
+    transition: all 0.25s ease;
+}
+
+.guest-lock-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-full);
+    background: rgba(20, 184, 166, 0.12);
+    border: 1px solid rgba(20, 184, 166, 0.28);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--teal);
+    margin-bottom: 18px;
+    box-shadow: 0 0 20px var(--teal-glow);
+}
+
+.guest-lock-card h4 {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 10px;
+    letter-spacing: -0.3px;
+}
+
+.guest-lock-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    max-width: 440px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.guest-lock-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+[data-theme="light"] .guest-lock-icon {
+    background: rgba(15, 159, 143, 0.1);
+    border-color: rgba(15, 159, 143, 0.25);
+}
+
+@media (max-width: 640px) {
+    .profile-search-row {
+        justify-content: stretch;
+    }
+    .profile-search-row .search-box {
+        width: 100%;
+        max-width: 100%;
+    }
+    .guest-lock-card {
+        padding: 32px 18px;
+        margin: 20px auto;
+    }
+    .guest-lock-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    .guest-lock-actions .btn {
+        width: 100%;
+    }
 }
 
 /* Badges */

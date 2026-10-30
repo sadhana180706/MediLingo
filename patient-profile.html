@@ -15,30 +15,30 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
         <a href="index.html" class="brand">
-            <div class="brand-icon">🩺</div>
+            <!--<div class="brand-icon">🩺</div>-->
             <span class="brand-text">Medi Lingo</span>
-            <span class="brand-badge">AI</span>
+            <!--<span class="brand-badge">AI</span>-->
         </a>
 
         <div class="sidebar-nav">
             <span class="nav-label">Patient Navigation</span>
             <a href="index.html" class="nav-item">
-                <span class="icon">🏠</span> Dashboard
+                <span class="icon"></span> Dashboard
             </a>
             <a href="consult.html" class="nav-item">
-                <span class="icon">🎙️</span> Start Consultation
+                <span class="icon"></span> Start Consultation
             </a>
             <a href="medicine-reference.html" class="nav-item">
-                <span class="icon">📚</span> Medicine Reference
+                <span class="icon"></span> Medicine Reference
             </a>
             <a href="medicines.html" class="nav-item">
-                <span class="icon">💊</span> Medicines Available
+                <span class="icon"></span> Medicines Available
             </a>
             <a href="doctors.html" class="nav-item">
-                <span class="icon">👨‍⚕️</span> Available Doctors
+                <span class="icon"></span> Available Doctors
             </a>
             <a href="patient-profile.html" class="nav-item active">
-                <span class="icon">📋</span> My Prescriptions
+                <span class="icon"></span> My Prescriptions
             </a>
             <button class="nav-item emergency" onclick="PatientController.triggerEmergency()">
                 <span class="icon">🚨</span> Emergency SOS
@@ -52,13 +52,14 @@
                 <div class="user-role">Patient Portal</div>
             </div>
             <button id="headerLogoutBtn" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Logout" onclick="Auth.logout('patient', 'patient-login.html')">🚪</button>
+            <a id="headerLoginBtn" href="patient-login.html" class="btn btn-primary btn-sm" style="display:none; padding:4px 8px; font-size:11px;">Sign In</a>
         </div>
     </aside>
 
     <!-- MAIN CONTENT -->
     <main class="main">
 
-        <!-- TOP BAR -->
+        <!-- TOP BAR (Row 1) -->
         <header class="top-bar">
             <div class="top-bar-title">
                 <div style="display:flex; align-items:center; gap:12px;">
@@ -78,6 +79,14 @@
             </div>
         </header>
 
+        <!-- SECOND ROW: Search bar positioned below theme toggle and header controls, aligned to the right side -->
+        <div class="profile-search-row">
+            <div class="search-box">
+                <input type="text" id="consultationSearchInput" placeholder="🔍 Search consultations, medicines, symptoms..." oninput="filterPersonalConsultations(this.value)">
+                <span class="search-icon"> </span>
+            </div>
+        </div>
+
         <!-- PROFILE HEADER CARD -->
         <section class="card" style="margin-bottom:28px;">
             <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;">
@@ -93,8 +102,8 @@
                     </div>
                 </div>
 
-                <div>
-                    <button class="btn btn-secondary btn-sm" onclick="Auth.logout('patient', 'patient-login.html')">
+                <div id="profileLogoutContainer" style="display:none;">
+                    <button id="profileLogoutBtn" class="btn btn-secondary btn-sm" onclick="Auth.logout('patient', 'patient-login.html')">
                         🚪 Logout
                     </button>
                 </div>
@@ -102,13 +111,14 @@
         </section>
 
         <!-- PERSONAL CONSULTATIONS DATA TABLE -->
-        <section class="table-wrapper">
+        <section class="table-wrapper" id="consultationsWrapper">
             <div class="table-header">
                 <h3>📜 My Past Consultations & Prescriptions</h3>
-                <span style="font-size:12px; color:var(--teal); background:rgba(20,184,166,0.1); padding:4px 10px; border-radius:var(--radius-full); border:1px solid rgba(20,184,166,0.25);">🔒 Private Self Records</span>
+                <span id="consultationsTableBadge" style="font-size:12px; color:var(--teal); background:rgba(20,184,166,0.1); padding:4px 10px; border-radius:var(--radius-full); border:1px solid rgba(20,184,166,0.25);">🔒 Private Self Records</span>
             </div>
 
-            <table class="modern-table">
+            <!-- TABLE FOR AUTHENTICATED PATIENTS -->
+            <table class="modern-table" id="consultationsTable">
                 <thead>
                     <tr>
                         <th>Date & Time</th>
@@ -127,6 +137,26 @@
                     </tr>
                 </tbody>
             </table>
+
+            <!-- GUEST LOCKED INFORMATION CARD (Shown ONLY for guest users) -->
+            <div id="guestLockCard" class="guest-lock-card" style="display:none;">
+                <div class="guest-lock-icon" aria-hidden="true">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <h4>🔒 Login to View Your Consultation History</h4>
+                <p>Your medical history and prescriptions are private. Please log in or create an account to securely access your past consultations and prescriptions.</p>
+                <div class="guest-lock-actions">
+                    <a href="patient-login.html" class="btn btn-primary" style="padding:10px 22px; font-size:14px;">
+                        🔐 Login
+                    </a>
+                    <a href="patient-register.html" class="btn btn-secondary" style="padding:10px 22px; font-size:14px;">
+                        ✨ Create Account
+                    </a>
+                </div>
+            </div>
         </section>
 
     </main>
@@ -138,62 +168,98 @@
 <script src="js/auth.js"></script>
 <script src="js/patient.js"></script>
 <script>
+let currentConsultations = [];
+
 document.addEventListener("DOMContentLoaded", () => {
     loadPatientProfile();
 });
 
 async function loadPatientProfile() {
     const patient = Auth.getSession("patient");
-    if (!patient) {
-        // If not logged in, prompt or load guest data
+    const isGuest = !patient || !patient.name || patient.patient_uid === "GUEST";
+
+    const logoutContainer = document.getElementById("profileLogoutContainer");
+    const consultationsTable = document.getElementById("consultationsTable");
+    const guestLockCard = document.getElementById("guestLockCard");
+    const tableBadge = document.getElementById("consultationsTableBadge");
+
+    if (isGuest) {
+        // 1. Guest Mode Profile UI
         document.getElementById("profileName").innerText = "Guest Patient";
+        document.getElementById("profileAvatar").innerText = "G";
         document.getElementById("profileUid").innerText = "GUEST";
         document.getElementById("profilePhone").innerText = "Not registered";
         document.getElementById("profileAgeGender").innerText = "--";
-        
-        // Show only last session's consultation from localStorage if exists
-        const lastRx = localStorage.getItem("medilingo_last_rx");
-        if (lastRx) {
-            const rx = JSON.parse(lastRx);
-            renderPersonalRecords([rx]);
-        } else {
-            document.getElementById("personalConsultationsTableBody").innerHTML = `
-                <tr>
-                    <td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">
-                        No consultation records found. <a href="patient-login.html" style="color:var(--teal);">Sign In</a> to save history permanently.
-                    </td>
-                </tr>
-            `;
-        }
+
+        // 2. Completely hide the Logout button container (no blank space)
+        if (logoutContainer) logoutContainer.style.display = "none";
+
+        // 3. Hide consultation table (headers, rows) and private badge
+        if (consultationsTable) consultationsTable.style.display = "none";
+        if (tableBadge) tableBadge.style.display = "none";
+
+        // 4. Display clean, centered guest locked info card
+        if (guestLockCard) guestLockCard.style.display = "flex";
+
+        // 5. Strictly avoid fetching or displaying any private consultation records
+        currentConsultations = [];
         return;
     }
+
+    // Authenticated Registered Patient Mode
+    if (logoutContainer) logoutContainer.style.display = "block";
+    if (consultationsTable) consultationsTable.style.display = "table";
+    if (tableBadge) tableBadge.style.display = "inline-block";
+    if (guestLockCard) guestLockCard.style.display = "none";
 
     document.getElementById("profileName").innerText = patient.name;
     document.getElementById("profileAvatar").innerText = patient.name.charAt(0).toUpperCase();
     document.getElementById("profileUid").innerText = patient.patient_uid || `PAT-${patient.id}`;
-    document.getElementById("profilePhone").innerText = patient.phone;
+    document.getElementById("profilePhone").innerText = patient.phone || "Not provided";
     document.getElementById("profileAgeGender").innerText = `${patient.age || 'N/A'} yrs • ${patient.gender || 'Not specified'}`;
 
     try {
         const res = await fetch(`${API_BASE}/api/patient/profile/${patient.patient_uid || patient.id}`);
         const data = await res.json();
         if (data.success && data.consultations) {
-            renderPersonalRecords(data.consultations);
+            currentConsultations = data.consultations;
+            renderPersonalRecords(currentConsultations);
         } else {
+            currentConsultations = [];
             renderPersonalRecords([]);
         }
     } catch (e) {
         console.error("Profile load error:", e);
+        currentConsultations = [];
+        renderPersonalRecords([]);
     }
+}
+
+function filterPersonalConsultations(query) {
+    const q = (query || "").trim().toLowerCase();
+    if (!q) {
+        renderPersonalRecords(currentConsultations);
+        return;
+    }
+    const filtered = currentConsultations.filter(r => {
+        const symptom = (r.symptom || r.symptoms || "").toLowerCase();
+        const med = (r.medication_suggested || r.medicine || "").toLowerCase();
+        const dosage = (r.dosage || "").toLowerCase();
+        const triage = (r.triage_level || "").toLowerCase();
+        const dateStr = (r.last_visited ? new Date(r.last_visited).toLocaleDateString() : (r.date || "")).toLowerCase();
+        return symptom.includes(q) || med.includes(q) || dosage.includes(q) || triage.includes(q) || dateStr.includes(q);
+    });
+    renderPersonalRecords(filtered);
 }
 
 function renderPersonalRecords(records) {
     const tbody = document.getElementById("personalConsultationsTableBody");
     if (records.length === 0) {
+        const hasSearch = document.getElementById("consultationSearchInput") && document.getElementById("consultationSearchInput").value.trim() !== "";
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">
-                    No consultations recorded for your account yet.
+                    ${hasSearch ? 'No consultation records match your search criteria.' : 'No consultations recorded for your account yet.'}
                 </td>
             </tr>
         `;
@@ -208,8 +274,8 @@ function renderPersonalRecords(records) {
         html += `
             <tr>
                 <td>${dateStr}</td>
-                <td style="max-width:220px;">${r.symptom || r.symptoms}</td>
-                <td><strong style="color:var(--teal);">${r.medication_suggested || r.medicine}</strong></td>
+                <td style="max-width:220px;">${r.symptom || r.symptoms || 'General Checkup'}</td>
+                <td><strong style="color:var(--teal);">${r.medication_suggested || r.medicine || 'Pending Consultation'}</strong></td>
                 <td>${r.dosage || 'As directed'}</td>
                 <td>
                     <span class="status-badge ${isEmergency ? 'emergency' : 'approved'}">

@@ -469,6 +469,9 @@ app.post("/api/patient/login", (req, res) => {
 // Patient Profile & Personal Consultations (CRITICAL: Only for this patient!)
 app.get("/api/patient/profile/:patientId", (req, res) => {
     const patientId = req.params.patientId;
+    if (!patientId || patientId.trim().toUpperCase() === "GUEST" || patientId === "undefined" || patientId === "null") {
+        return res.status(401).json({ success: false, message: "Authentication required. Guest users cannot access consultation records." });
+    }
     db.query("SELECT id, patient_uid, name, phone, email, age, gender, created_at FROM patients WHERE id = ? OR patient_uid = ? LIMIT 1", [patientId, patientId], (err, patientRows) => {
         if (err) return res.status(500).json({ success: false, message: "Database error" });
         if (patientRows.length === 0) {

@@ -18,30 +18,30 @@
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <a href="index.html" class="brand">
-                <div class="brand-icon">🩺</div>
+                <!--<div class="brand-icon">🩺</div>-->
                 <span class="brand-text">Medi Lingo</span>
-                <span class="brand-badge">AI</span>
+               <!-- <span class="brand-badge">AI</span>-->
             </a>
 
             <div class="sidebar-nav">
                 <span class="nav-label">Patient Navigation</span>
                 <a href="index.html" class="nav-item active">
-                    <span class="icon">🏠</span> Dashboard
+                   <span class="icon"></span> Dashboard 
                 </a>
                 <a href="consult.html" class="nav-item">
-                    <span class="icon">🎙️</span> Start Consultation
+                    <span class="icon"></span> Start Consultation
                 </a>
                 <a href="medicine-reference.html" class="nav-item">
-                    <span class="icon">📚</span> Medicine Reference
+                    <span class="icon"></span> Medicine Reference
                 </a>
                 <a href="medicines.html" class="nav-item">
-                    <span class="icon">💊</span> Medicines Available
+                    <span class="icon"></span> Medicines Available
                 </a>
                 <a href="doctors.html" class="nav-item">
-                    <span class="icon">👨‍⚕️</span> Available Doctors
+                    <span class="icon"></span> Available Doctors
                 </a>
                 <a href="patient-profile.html" class="nav-item">
-                    <span class="icon">📋</span> My Prescriptions
+                    <span class="icon"></span> My Prescriptions
                 </a>
 
                 <button class="nav-item emergency" onclick="PatientController.triggerEmergency()">
@@ -80,7 +80,7 @@
 
                 <div class="top-bar-actions">
                     <div class="search-box">
-                        <input type="text" placeholder="🔍 Search medicines, symptoms..."
+                        <input type="text" placeholder="🔍 Search for symptoms and medicines"
                             onkeydown="if(event.key==='Enter') window.location.href='medicine-reference.html'">
                         <span class="search-icon"> </span>
                     </div>
@@ -99,11 +99,61 @@
                 <p>Describe your symptoms in your native language via voice or text. Get instant AI-assisted clinical
                     guidance, dosage recommendations, and verified doctor teleconsultation.</p>
 
-                <div class="hero-badges">
-                    <span class="pill-badge teal">🎙️ Voice-Enabled Speech Recognition</span>
-                    <span class="pill-badge">🇮🇳 6 Indian Languages Supported</span>
-                    <span class="pill-badge">⚡ Instant AI Triage</span>
-                    <span class="pill-badge">🤖 IoT Smart Vending Ready</span>
+                <div class="hero-features" role="list" aria-label="Key platform features">
+                    <div class="hero-feature-item" role="listitem">
+                        <span class="hero-feature-icon" aria-hidden="true">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" x2="12" y1="19" y2="22"></line>
+                            </svg>
+                        </span>
+                        <span class="hero-feature-text"><span class="highlight">Voice-Enabled</span> Speech Recognition</span>
+                    </div>
+
+                    <span class="hero-feature-divider" aria-hidden="true"></span>
+
+                    <div class="hero-feature-item" role="listitem">
+                        <span class="hero-feature-icon" aria-hidden="true">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="2" x2="22" y1="12" y2="12"></line>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                            </svg>
+                        </span>
+                        <span class="hero-feature-text"><span class="highlight">6 Languages</span> Supported</span>
+                    </div>
+
+                    <span class="hero-feature-divider" aria-hidden="true"></span>
+
+                    <div class="hero-feature-item" role="listitem">
+                        <span class="hero-feature-icon" aria-hidden="true">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                            </svg>
+                        </span>
+                        <span class="hero-feature-text"><span class="highlight">Instant AI</span> Triage</span>
+                    </div>
+
+                    <span class="hero-feature-divider" aria-hidden="true"></span>
+
+                    <div class="hero-feature-item" role="listitem">
+                        <span class="hero-feature-icon" aria-hidden="true">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                                <rect x="9" y="9" width="6" height="6"></rect>
+                                <line x1="9" y1="1" x2="9" y2="4"></line>
+                                <line x1="15" y1="1" x2="15" y2="4"></line>
+                                <line x1="9" y1="20" x2="9" y2="23"></line>
+                                <line x1="15" y1="20" x2="15" y2="23"></line>
+                                <line x1="20" y1="9" x2="23" y2="9"></line>
+                                <line x1="20" y1="14" x2="23" y2="14"></line>
+                                <line x1="1" y1="9" x2="4" y2="9"></line>
+                                <line x1="1" y1="14" x2="4" y2="14"></line>
+                            </svg>
+                        </span>
+                        <span class="hero-feature-text"><span class="highlight">IoT Smart Vending</span> Ready</span>
+                    </div>
                 </div>
 
                 <div style="display:flex; gap:14px; flex-wrap:wrap;">
@@ -186,7 +236,7 @@
                                 (മലയാളം), Kannada (ಕನ್ನಡ)</strong> and <strong>English</strong>.</p>
                     </div>
                     <a href="consult.html" class="btn btn-blue">
-                        Try Multilingual Voice Input 🎤
+                        Try Voice Input 
                     </a>
                 </div>
             </section>
