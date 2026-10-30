@@ -314,7 +314,7 @@ function autoPopulatePatientDetails() {
         if (patient.phone) document.getElementById("patientPhoneInput").value = patient.phone;
     }
 }
-
+const API_BASE = window.location.origin;
 async function runAIClinicalAnalysis() {
     const symptomText = document.getElementById("symptomTextInput").value.trim();
     const name = document.getElementById("patientNameInput").value.trim();
